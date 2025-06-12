@@ -1,0 +1,68 @@
+// Import font Nunito
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+// Override Bootstrap variables
+$green: #15400E;
+
+$primary: rgba(21, 64, 14, 0.8);
+$font-family-base: 'Nunito', Helvetica; // untuk font keseluruhan
+
+h1, h2, h3, h4, h5, h6 {
+  color: #15400E !important;
+}
+
+a {
+  text-decoration: none !important;
+  color: inherit;
+
+  &:hover {
+    text-decoration: none !important;
+  }
+}
+
+@import 'bootstrap/scss/bootstrap';
+
+// Tampilkan bullet dan numbering di dalam konten editor atau detail berita
+.prose ul, .prose ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
+}
+
+.prose li {
+  margin-bottom: 0.5rem;
+}
+
+.pagination {
+  .page-item {
+    .page-link {
+      color: #15400E; // hijau tua untuk teks
+      border: 1px solid #15400E;
+      background-color: #fff;
+
+      &:hover {
+        background-color: rgba(21, 64, 14, 0.1); // hijau muda (hover)
+        color: #15400E;
+      }
+    }
+
+    &.active .page-link {
+      background-color: #15400E; // warna utama saat aktif
+      border-color: #15400E;
+      color: #fff;
+    }
+
+    &.disabled .page-link {
+      color: #ccc;
+      background-color: #f8f9fa;
+      border-color: #dee2e6;
+    }
+  }
+}
