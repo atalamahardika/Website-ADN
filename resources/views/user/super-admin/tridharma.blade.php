@@ -49,7 +49,7 @@
                             @csrf
                             @method('PUT')
                             <div class="mb-4">
-                                <label for="edit_title" class="block font-medium">Judul Tri Dharma</label>
+                                <label for="edit_title" class="block font-semibold">Judul Tri Dharma</label>
                                 <input type="text" name="title" id="edit_title" class="form-control">
                             </div>
                             <div class="mb-4">
