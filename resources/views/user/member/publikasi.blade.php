@@ -42,9 +42,19 @@
                                         </p>
                                         {{-- Link --}}
                                         @if ($pub->link)
-                                            <a href="{{ $pub->link }}" target="_blank"
-                                                class="text-blue-600 underline">Lihat publikasi</a>
+                                            <p class="text-sm text-gray-700 mt-2">
+                                                Sumber:
+                                                @if (Str::startsWith($pub->link, ['http://', 'https://']))
+                                                    <a href="{{ $pub->link }}" target="_blank"
+                                                        class="text-blue-600 underline">
+                                                        {{ $pub->link }}
+                                                    </a>
+                                                @else
+                                                    {{ $pub->link }}
+                                                @endif
+                                            </p>
                                         @endif
+
                                     </div>
                                     <div class="flex gap-2 mt-1">
                                         <button
@@ -65,22 +75,42 @@
                                         class="space-y-3">
                                         @csrf
                                         @method('PATCH')
-                                        <input type="text" name="authors" value="{{ implode(', ', $pub->authors) }}"
-                                            placeholder="Nama pengarang (pisah koma)" class="form-input rounded w-full"
-                                            required>
-                                        <input type="text" name="title" value="{{ $pub->title }}"
-                                            class="form-input rounded w-full" placeholder="Judul publikasi" required>
-                                        <input type="number" name="year" value="{{ $pub->year }}"
-                                            class="form-input rounded w-full" placeholder="Tahun" required>
-                                        <input type="text" name="journal_name" value="{{ $pub->journal_name }}"
-                                            class="form-input rounded w-full" placeholder="Nama jurnal" required>
-                                        <input type="text" name="volume" value="{{ $pub->volume }}"
-                                            class="form-input rounded w-full" placeholder="Volume">
-                                        <input type="text" name="pages" value="{{ $pub->pages }}"
-                                            class="form-input rounded w-full" placeholder="Halaman">
-                                        <input type="url" name="link" value="{{ $pub->link }}"
-                                            class="form-input rounded w-full"
-                                            placeholder="Contoh: https://dicoding.com">
+                                        <div class="mb-4">
+                                            <label for="edit_authors" class="block font-semibold">Nama Penulis</label>
+                                            <input type="text" name="authors"
+                                                value="{{ implode(', ', $pub->authors) }}"
+                                                placeholder="Nama pengarang (pisah koma)" class="form-control" required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_title" class="block font-semibold">Judul Publikasi</label>
+                                            <input type="text" name="title" value="{{ $pub->title }}"
+                                                class="form-control" placeholder="Judul publikasi" required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_year" class="block font-semibold">Tahun Publikasi</label>
+                                            <input type="number" name="year" value="{{ $pub->year }}"
+                                                class="form-control" placeholder="Tahun" required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_journal_name" class="block font-semibold"></label>
+                                            <input type="text" name="journal_name" value="{{ $pub->journal_name }}"
+                                                class="form-control" placeholder="Nama jurnal" required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_volume" class="block font-semibold">Volume</label>
+                                            <input type="text" name="volume" value="{{ $pub->volume }}"
+                                                class="form-control" placeholder="Volume">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_pages" class="block font-semibold">Halaman</label>
+                                            <input type="text" name="pages" value="{{ $pub->pages }}"
+                                                class="form-control" placeholder="Halaman">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_link" class="block font-semibold">Link Publikasi</label>
+                                            <input type="url" name="link" value="{{ $pub->link }}"
+                                                class="form-control" placeholder="Contoh: elsevier.com">
+                                        </div>
                                         <div class="text-end">
                                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                                         </div>
@@ -105,18 +135,36 @@
     <x-modal id="tambahModal" title="Tambah Publikasi">
         <form method="POST" action="{{ route('publikasi.store') }}" class="space-y-3">
             @csrf
-            <input type="text" name="authors" placeholder="Nama pengarang (pisah koma)"
-                class="form-input rounded w-full" required>
-            <input type="text" name="title" placeholder="Judul publikasi" class="form-input rounded w-full"
-                required>
-            <input type="number" name="year" placeholder="Tahun" class="form-input rounded w-full" required>
-            <input type="text" name="journal_name" placeholder="Nama jurnal" class="form-input rounded w-full"
-                required>
-            <input type="text" name="volume" placeholder="Volume (misal: 3)" class="form-input rounded w-full">
-            <input type="text" name="pages" placeholder="Halaman (misal: 10–20)"
-                class="form-input rounded w-full">
-            <input type="url" name="link" placeholder="Contoh: https://dicoding.com"
-                class="form-input rounded w-full">
+
+            <div class="mb-4">
+                <label for="authors" class="block font-semibold">Nama Penulis</label>
+                <input type="text" name="authors" placeholder="Nama pengarang (pisah koma)" class="form-control"
+                    required>
+            </div>
+            <div class="mb-4">
+                <label for="title" class="block font-semibold">Judul Publikasi</label>
+                <input type="text" name="title" placeholder="Judul publikasi" class="form-control" required>
+            </div>
+            <div class="mb-4">
+                <label for="year" class="block font-semibold">Tahun Publikasi</label>
+                <input type="number" name="year" placeholder="Tahun" class="form-control" required>
+            </div>
+            <div class="mb-4">
+                <label for="journal_name" class="block font-semibold">Nama Jurnal</label>
+                <input type="text" name="journal_name" placeholder="Nama jurnal" class="form-control" required>
+            </div>
+            <div class="mb-4">
+                <label for="volume" class="block font-semibold">Volume</label>
+                <input type="number" name="volume" placeholder="misal: 3" class="form-control">
+            </div>
+            <div class="mb-4">
+                <label for="pages" class="block font-semibold">Halaman</label>
+                <input type="text" name="pages" placeholder="misal: 10–20" class="form-control">
+            </div>
+            <div class="mb-4">
+                <label for="link" class="block font-semibold">Link Publikasi</label>
+                <input type="text" name="link" placeholder="Contoh: elsevier.com" class="form-control">
+            </div>
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">Tambah Publikasi</button>
             </div>

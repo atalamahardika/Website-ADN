@@ -99,9 +99,18 @@
                             </p>
                             {{-- Link --}}
                             @if ($pub->link)
-                                <a href="{{ $pub->link }}" target="_blank" class="text-blue-600 underline">Lihat
-                                    publikasi</a>
+                                <p class="text-sm text-gray-700 mt-2">
+                                    Sumber:
+                                    @if (Str::startsWith($pub->link, ['http://', 'https://']))
+                                        <a href="{{ $pub->link }}" target="_blank" class="text-blue-600 underline">
+                                            {{ $pub->link }}
+                                        </a>
+                                    @else
+                                        {{ $pub->link }}
+                                    @endif
+                                </p>
                             @endif
+
                         </div>
                     </li>
                 @empty
