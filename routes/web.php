@@ -71,6 +71,9 @@ Route::middleware(['auth', 'verified', 'role:member'])->group(function () {
     Route::get('profile', [MemberController::class, 'profile'])->name('profile.edit');
     Route::patch('profile', [MemberController::class, 'profileUpdate'])->name('profile.update');
 
+    // Route untuk mengakses halaman keanggotaan
+    Route::get('keanggotaan', [MemberController::class, 'showKeanggotaan'])->name('keanggotaan');
+
     // Route untuk mengakses halaman ganti password
     Route::get('ganti-password', [MemberController::class, 'showChangePassword'])->name('ganti-password');
     Route::put('ganti-password', [MemberController::class, 'updatePassword'])->name('ganti-password.update');
