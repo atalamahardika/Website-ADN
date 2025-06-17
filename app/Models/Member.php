@@ -74,7 +74,7 @@ class Member extends Model
     }
 
     public function publications()
-{
-    return $this->hasMany(PublicationMember::class);
-}
+    {
+        return $this->hasMany(PublicationMember::class);
+    }
 }
