@@ -29,7 +29,7 @@
                 @if ($user->role === 'member')
                     <a href="{{ route('profile.edit') }}"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil Saya</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Keanggotaan</a>
+                    <a href="{{ route('keanggotaan') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Keanggotaan</a>
                     <a href="{{ route('ganti-password') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ubah Kata
                         Sandi</a>
                 @elseif ($user->role === 'admin')
