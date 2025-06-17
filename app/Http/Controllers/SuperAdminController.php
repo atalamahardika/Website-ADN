@@ -398,9 +398,9 @@ class SuperAdminController extends Controller
     public function membership()
     {
         return view('user.super-admin.membership', [
-            'title' => 'Membership Keanggotaan ',
+            'title' => 'Membership Keanggotaan',
             'subtitle' => 'Kelola membership yang ada di Aliansi Dosen Nahada (ADN).',
-            'user' => auth()->user()
+            'user' => auth()->user(),
         ]);
     }
 
