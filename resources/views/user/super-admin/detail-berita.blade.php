@@ -189,7 +189,7 @@
 
         // ✅ Gunakan slug, bukan ID!
         const form = document.getElementById('formEditBerita');
-        form.action = `superadmin/berita/detail-berita/${berita.slug}`;
+        form.action = `${berita.slug}`;
 
         document.getElementById('modalEditBerita').classList.remove('hidden');
     }
