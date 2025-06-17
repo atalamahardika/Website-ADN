@@ -29,7 +29,7 @@
                             </label>
                             <input id="profile_photo" name="profile_photo" type="file" class="hidden"
                                 accept="image/*">
-                            <p class="mb-0 text-sm text-gray-500">Upload foto anda dengan rasio 1:1. Maks 10 MB.</p>
+                            <p class="mb-0 text-sm text-gray-500">Upload foto anda dengan rasio 1:1. Maks 2 MB.</p>
 
                             {{-- Tampilkan error validasi --}}
                             @error('profile_photo')
@@ -60,7 +60,7 @@
                     <!-- Nama -->
                     <div class="mb-4">
                         <x-input-label for="name" :value="__('Nama')" />
-                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                        <x-text-input id="name" name="name" type="text" class="form-control"
                             :value="old('name', $user->name)" required autofocus autocomplete="name" />
                         <x-input-error :messages="$errors->get('name')" class="mt-2" />
                     </div>
@@ -68,15 +68,15 @@
                     <!-- Email -->
                     <div class="mb-4">
                         <x-input-label for="email" :value="__('Email')" />
-                        <x-text-input id="email" name="email" type="text" class="mt-1 block w-full"
-                            :value="old('email', $user->email)" required autofocus autocomplete="email" />
+                        <x-text-input id="email" name="email" type="text" class="form-control"
+                            :value="old('email', $user->email)" readonly />
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
                     <!-- Gelar Depan -->
                     <div class="mb-4">
                         <x-input-label for="gelar_depan" :value="__('Gelar Depan')" />
-                        <x-text-input id="gelar_depan" name="gelar_depan" type="text" class="mt-1 block w-full"
+                        <x-text-input id="gelar_depan" name="gelar_depan" type="text" class="form-control"
                             :value="old('gelar_depan', $user->member->gelar_depan ?? '')" placeholder="Contoh: Dr. atau Prof." />
                         <x-input-error :messages="$errors->get('gelar_depan')" class="mt-2" />
                     </div>
@@ -86,7 +86,7 @@
                         <div class="mb-4">
                             <x-input-label for="gelar_belakang_{{ $i }}" :value="'Gelar Belakang ' . $i" />
                             <x-text-input id="gelar_belakang_{{ $i }}"
-                                name="gelar_belakang_{{ $i }}" type="text" class="mt-1 block w-full"
+                                name="gelar_belakang_{{ $i }}" type="text" class="form-control"
                                 :value="old('gelar_belakang_' . $i, $user->member->{'gelar_belakang_' . $i} ?? '')" placeholder="Contoh: S.Kom. atau M.Kom." />
                             <x-input-error :messages="$errors->get('gelar_belakang_' . $i)" class="mt-2" />
                         </div>
@@ -95,40 +95,40 @@
                     <!-- NIK -->
                     <div class="mb-4">
                         <x-input-label for="nik" :value="__('NIK')" />
-                        <x-text-input id="nik" name="nik" type="text" class="mt-1 block w-full"
-                            :value="old('nik', $user->member->nik ?? '')" placeholder="Masukkan NIK anda sesuai KTP" />
+                        <x-text-input id="nik" name="nik" type="text" class="form-control"
+                            :value="old('nik', $user->member->nik ?? '')" placeholder="Masukkan NIK anda sesuai KTP" required />
                         <x-input-error :messages="$errors->get('nik')" class="mt-2" />
                     </div>
 
                     <!-- Tempat Lahir -->
                     <div class="mb-4">
                         <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
-                        <x-text-input id="tempat_lahir" name="tempat_lahir" type="text" class="mt-1 block w-full"
-                            :value="old('tempat_lahir', $user->member->tempat_lahir ?? '')" placeholder="Masukkan tempat anda lahir" />
+                        <x-text-input id="tempat_lahir" name="tempat_lahir" type="text" class="form-control"
+                            :value="old('tempat_lahir', $user->member->tempat_lahir ?? '')" placeholder="Masukkan tempat anda lahir" required />
                         <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
                     </div>
 
                     <!-- Tanggal Lahir -->
                     <div class="mb-4">
                         <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
-                        <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="mt-1 block w-full"
-                            :value="old('tanggal_lahir', $user->member->tanggal_lahir ?? '')" />
+                        <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="form-control"
+                            :value="old('tanggal_lahir', $user->member->tanggal_lahir ?? '')" required />
                         <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
                     </div>
 
                     <!-- No HP -->
                     <div class="mb-4">
                         <x-input-label for="no_hp" :value="__('No HP')" />
-                        <x-text-input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full"
-                            :value="old('no_hp', $user->member->no_hp ?? '')" placeholder="Masukkan nomor handphone yang aktif" />
+                        <x-text-input id="no_hp" name="no_hp" type="text" class="form-control"
+                            :value="old('no_hp', $user->member->no_hp ?? '')" placeholder="Masukkan nomor handphone yang aktif" required />
                         <x-input-error :messages="$errors->get('no_hp')" class="mt-2" />
                     </div>
 
                     <!-- No WhatsApp -->
                     <div class="mb-4">
                         <x-input-label for="no_wa" :value="__('No WhatsApp')" />
-                        <x-text-input id="no_wa" name="no_wa" type="text" class="mt-1 block w-full"
-                            :value="old('no_wa', $user->member->no_wa ?? '')" placeholder="Masukkan nomor whatsapp yang aktif" />
+                        <x-text-input id="no_wa" name="no_wa" type="text" class="form-control"
+                            :value="old('no_wa', $user->member->no_wa ?? '')" placeholder="Masukkan nomor whatsapp yang aktif" required />
                         <x-input-error :messages="$errors->get('no_wa')" class="mt-2" />
                     </div>
 
@@ -136,34 +136,34 @@
                     <div class="mb-4">
                         <x-input-label for="email_institusi" :value="__('Email Institusi')" />
                         <x-text-input id="email_institusi" name="email_institusi" type="email"
-                            class="mt-1 block w-full" :value="old('email_institusi', $user->member->email_institusi ?? '')"
-                            placeholder="Masukkan email institusi anda" />
+                            class="form-control" :value="old('email_institusi', $user->member->email_institusi ?? '')"
+                            placeholder="Masukkan email institusi anda" required />
                         <x-input-error :messages="$errors->get('email_institusi')" class="mt-2" />
                     </div>
 
                     <!-- Universitas -->
                     <div class="mb-4">
                         <x-input-label for="universitas" :value="__('Universitas')" />
-                        <x-text-input id="universitas" name="universitas" type="text" class="mt-1 block w-full"
+                        <x-text-input id="universitas" name="universitas" type="text" class="form-control"
                             :value="old('universitas', $user->member->universitas ?? '')"
-                            placeholder="Contoh: Brawijaya, Airlangga, Gajah Mada (tanpa universitas)" />
+                            placeholder="Contoh: Brawijaya, Airlangga, Gajah Mada (tanpa universitas)" required />
                         <x-input-error :messages="$errors->get('universitas')" class="mt-2" />
                     </div>
 
                     <!-- Fakultas -->
                     <div class="mb-4">
                         <x-input-label for="fakultas" :value="__('Fakultas')" />
-                        <x-text-input id="fakultas" name="fakultas" type="text" class="mt-1 block w-full"
+                        <x-text-input id="fakultas" name="fakultas" type="text" class="form-control"
                             :value="old('fakultas', $user->member->fakultas ?? '')"
-                            placeholder="Contoh: Ilmu Komputer, Peternakan, Perikanan & Kelautan (tanpa fakultas)" />
+                            placeholder="Contoh: Ilmu Komputer, Peternakan, Perikanan & Kelautan (tanpa fakultas)" required />
                         <x-input-error :messages="$errors->get('fakultas')" class="mt-2" />
                     </div>
 
                     <!-- Prodi -->
                     <div class="mb-4">
                         <x-input-label for="prodi" :value="__('Program Studi')" />
-                        <x-text-input id="prodi" name="prodi" type="text" class="mt-1 block w-full"
-                            :value="old('prodi', $user->member->prodi ?? '')" placeholder="Contoh: Teknik Informatika, Teknik Sipil" />
+                        <x-text-input id="prodi" name="prodi" type="text" class="form-control"
+                            :value="old('prodi', $user->member->prodi ?? '')" placeholder="Contoh: Teknik Informatika, Teknik Sipil" required />
                         <x-input-error :messages="$errors->get('prodi')" class="mt-2" />
                     </div>
 
@@ -171,15 +171,15 @@
                     <div class="mb-4">
                         <x-input-label for="alamat_jalan" :value="__('Alamat Jalan')" />
                         <textarea id="alamat_jalan" name="alamat_jalan" rows="3"
-                            class="mt-1 block w-full rounded-md shadow-sm border-gray-300" placeholder="Masukkan alamat jalan lengkap anda">{{ old('alamat_jalan', $user->member->alamat_jalan ?? '') }}</textarea>
+                            class="form-control rounded-md shadow-sm border-gray-300" placeholder="Masukkan alamat jalan lengkap anda" required>{{ old('alamat_jalan', $user->member->alamat_jalan ?? '') }}</textarea>
                         <x-input-error :messages="$errors->get('alamat_jalan')" class="mt-2" />
                     </div>
 
                     <!-- Provinsi -->
                     <div class="mb-4">
                         <x-input-label for="provinsi" :value="__('Provinsi')" />
-                        <select id="provinsi" name="provinsi" class="mt-1 block w-full"
-                            data-selected="{{ $user->member->provinsi }}">
+                        <select id="provinsi" name="provinsi" class="form-control"
+                            data-selected="{{ $user->member->provinsi }}" required>
                             <option value="">Pilih Provinsi</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
@@ -188,8 +188,8 @@
                     <!-- Kabupaten/Kota -->
                     <div class="mb-4">
                         <x-input-label for="kabupaten" :value="__('Kabupaten/Kota')" />
-                        <select id="kabupaten" name="kabupaten" class="mt-1 block w-full"
-                            data-selected="{{ $user->member->kabupaten }}">
+                        <select id="kabupaten" name="kabupaten" class="form-control"
+                            data-selected="{{ $user->member->kabupaten }}" required>
                             <option value="">Pilih Kabupaten</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
@@ -198,8 +198,8 @@
                     <!-- Kecamatan -->
                     <div class="mb-4">
                         <x-input-label for="kecamatan" :value="__('Kecamatan')" />
-                        <select id="kecamatan" name="kecamatan" class="mt-1 block w-full"
-                            data-selected="{{ $user->member->kecamatan }}">
+                        <select id="kecamatan" name="kecamatan" class="form-control"
+                            data-selected="{{ $user->member->kecamatan }}" required>
                             <option value="">Pilih Kecamatan</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
@@ -208,8 +208,8 @@
                     <!-- Kelurahan -->
                     <div class="mb-4">
                         <x-input-label for="kelurahan" :value="__('Kelurahan')" />
-                        <select id="kelurahan" name="kelurahan" class="mt-1 block w-full"
-                            data-selected="{{ $user->member->kelurahan }}">
+                        <select id="kelurahan" name="kelurahan" class="form-control"
+                            data-selected="{{ $user->member->kelurahan }}" required>
                             <option value="">Pilih Kelurahan</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
@@ -219,7 +219,7 @@
                     <!-- Kode Pos -->
                     <div class="mb-4">
                         <x-input-label for="kode_pos" :value="__('Kode Pos')" />
-                        <x-text-input id="kode_pos" name="kode_pos" type="text" class="mt-1 block w-full"
+                        <x-text-input id="kode_pos" name="kode_pos" type="text" class="form-control"
                             :value="old('kode_pos', $user->member->kode_pos ?? '')" readonly />
                         <x-input-error :messages="$errors->get('kode_pos')" class="mt-2" />
                     </div>
@@ -259,15 +259,6 @@
 
 </body>
 <script>
-    // Preview profile photo
-    document.getElementById('profile_photo').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const preview = document.getElementById('preview-photo');
-            preview.src = URL.createObjectURL(file);
-        }
-    });
-
     // Cropper.js untuk foto profil
     let cropper;
     const inputPhoto = document.getElementById('profile_photo');
@@ -278,22 +269,47 @@
 
     inputPhoto.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file && /^image\//.test(file.type)) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imageToCrop.src = e.target.result;
-                modal.style.display = 'flex';
 
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(imageToCrop, {
-                    aspectRatio: 1,
-                    viewMode: 1,
-                    autoCropArea: 1,
-                    responsive: true
-                });
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const maxSize = 2 * 1024 * 1024; // 2 MB
+
+        if (!validTypes.includes(file.type)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Format Tidak Valid',
+                text: 'Hanya file JPG, JPEG, dan PNG yang diperbolehkan.',
+            });
+            inputPhoto.value = '';
+            return;
         }
+
+        if (file.size > maxSize) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ukuran File Terlalu Besar',
+                text: 'Ukuran foto tidak boleh lebih dari 2 MB.',
+            });
+            inputPhoto.value = '';
+            return;
+        }
+
+        // Valid file, lanjut tampilkan cropper modal dan preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageToCrop.src = e.target.result;
+            modal.style.display = 'flex';
+
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                responsive: true
+            });
+        };
+        reader.readAsDataURL(file);
     });
 
     document.getElementById('cancelCrop').addEventListener('click', () => {
