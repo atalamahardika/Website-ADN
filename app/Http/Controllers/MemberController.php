@@ -335,7 +335,7 @@ class MemberController extends Controller
             'journal_name' => 'required|string',
             'volume' => 'nullable|string',
             'pages' => 'nullable|string',
-            'link' => 'nullable|url',
+            'link' => 'required|string',
         ]);
 
         $authorsArray = array_map('trim', explode(',', $request->authors));
@@ -411,7 +411,7 @@ class MemberController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
-                'required',
+                'nullable',
                 'string',
                 'lowercase',
                 'email',
@@ -562,5 +562,14 @@ class MemberController extends Controller
         ]);
 
         return redirect()->route('ganti-password')->with('status', 'Password berhasil diperbarui.');
+    }
+
+    public function showKeanggotaan()
+    {
+        return view('user.member.keanggotaan', [
+            'title' => 'Keanggotaan Saya',
+            'subtitle' => 'Kelola keanggotaan saya',
+            'user' => auth()->user()
+        ]);
     }
 }
