@@ -30,7 +30,7 @@
                             </label>
                             <input id="profile_photo" name="profile_photo" type="file" class="hidden"
                                 accept="image/*">
-                            <p class="mb-0 text-sm text-gray-500">Upload foto anda dengan rasio 1:1. Maks 10 MB.</p>
+                            <p class="mb-0 text-sm text-gray-500">Upload foto anda dengan rasio 1:1. Maks 2 MB.</p>
 
                             {{-- Tampilkan error validasi --}}
                             @error('profile_photo')
@@ -70,7 +70,7 @@
                     <div class="mb-4">
                         <x-input-label for="email" :value="__('Email')" />
                         <x-text-input id="email" name="email" type="text" class="mt-1 block w-full"
-                            :value="old('email', $user->email)" required autofocus autocomplete="email" />
+                            :value="old('email', $user->email)" readonly autofocus autocomplete="email" />
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
@@ -106,15 +106,6 @@
     @endif
 </body>
 <script>
-    // Preview profile photo
-    document.getElementById('profile_photo').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const preview = document.getElementById('preview-photo');
-            preview.src = URL.createObjectURL(file);
-        }
-    });
-
     // Cropper.js untuk foto profil
     let cropper;
     const inputPhoto = document.getElementById('profile_photo');
@@ -125,23 +116,49 @@
 
     inputPhoto.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file && /^image\//.test(file.type)) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imageToCrop.src = e.target.result;
-                modal.style.display = 'flex';
 
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(imageToCrop, {
-                    aspectRatio: 1,
-                    viewMode: 1,
-                    autoCropArea: 1,
-                    responsive: true
-                });
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const maxSize = 2 * 1024 * 1024; // 2 MB
+
+        if (!validTypes.includes(file.type)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Format Tidak Valid',
+                text: 'Hanya file JPG, JPEG, dan PNG yang diperbolehkan.',
+            });
+            inputPhoto.value = '';
+            return;
         }
+
+        if (file.size > maxSize) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ukuran File Terlalu Besar',
+                text: 'Ukuran foto tidak boleh lebih dari 2 MB.',
+            });
+            inputPhoto.value = '';
+            return;
+        }
+
+        // Valid file, lanjut tampilkan cropper modal dan preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imageToCrop.src = e.target.result;
+            modal.style.display = 'flex';
+
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                responsive: true
+            });
+        };
+        reader.readAsDataURL(file);
     });
+
 
     document.getElementById('cancelCrop').addEventListener('click', () => {
         modal.style.display = 'none';
