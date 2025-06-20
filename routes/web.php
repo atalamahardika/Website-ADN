@@ -73,6 +73,13 @@ Route::middleware(['auth', 'verified', 'role:member'])->group(function () {
 
     // Route untuk mengakses halaman keanggotaan
     Route::get('keanggotaan', [MemberController::class, 'showKeanggotaan'])->name('keanggotaan');
+    // Route untuk proses pendaftaran membership
+    Route::post('keanggotaan/register', [MemberController::class, 'registerMembership'])->name('keanggotaan.register');
+    // Route untuk perpanjangan membership
+    Route::post('keanggotaan/renew', [MemberController::class, 'renewMembership'])->name('keanggotaan.renew');
+    // Di routes/web.php atau routes yang sesuai
+    Route::post('/member/re-register-membership', [MemberController::class, 'reRegisterMembership'])->name('member.reRegisterMembership');
+    Route::post('/member/re-renew-membership', [MemberController::class, 'reRenewMembership'])->name('member.reRenewMembership');
 
     // Route untuk mengakses halaman ganti password
     Route::get('ganti-password', [MemberController::class, 'showChangePassword'])->name('ganti-password');
@@ -123,7 +130,6 @@ Route::middleware(['auth', 'verified', 'role:super admin'])->group(function () {
     Route::delete('/superadmin/detail/sub-divisi/delete/{id}', [SuperAdminController::class, 'deleteSubDivision'])->name('superadmin.subdivisi.delete');
     Route::patch('/detail/sub-divisi/approval/{id}', [SuperAdminController::class, 'toggleSubDivisionApproval'])->name('superadmin.subdivisi.toggleApproval');
 
-
     // CRUD Admin
     Route::get('superadmin/admin', [SuperAdminController::class, 'adminIndex'])->name('superadmin.admin');
     Route::post('superadmin/admin', [SuperAdminController::class, 'adminStore'])->name('superadmin.admin.store');
@@ -134,6 +140,21 @@ Route::middleware(['auth', 'verified', 'role:super admin'])->group(function () {
 
     // CRUD Membership
     Route::get('superadmin/membership', [SuperAdminController::class, 'membership'])->name('superadmin.membership');
+    Route::get('superadmin/membership/{id}/detail', [SuperAdminController::class, 'membershipDetail'])->name('superadmin.membership.detail');
+    Route::put('superadmin/membership/{id}', [SuperAdminController::class, 'updateMembership'])->name('superadmin.membership.update');
+
+    // Payment Management
+    Route::post('superadmin/payment/{id}/approve', [SuperAdminController::class, 'approvePayment'])->name('superadmin.payment.approve');
+    Route::post('superadmin/payment/{id}/reject', [SuperAdminController::class, 'rejectPayment'])->name('superadmin.payment.reject');
+
+    // Export
+    Route::get('superadmin/membership/export', [SuperAdminController::class, 'exportMembership'])->name('superadmin.membership.export');
+
+    // Payment Settings CRUD (routes updated to work within membership page)
+    Route::post('superadmin/membership/payment-settings', [SuperAdminController::class, 'storePaymentSetting'])->name('superadmin.payment-settings.store');
+    Route::put('superadmin/membership/payment-settings/{id}', [SuperAdminController::class, 'updatePaymentSetting'])->name('superadmin.payment-settings.update');
+    Route::post('superadmin/membership/payment-settings/{id}/activate', [SuperAdminController::class, 'activatePaymentSetting'])->name('superadmin.payment-settings.activate');
+    Route::delete('superadmin/membership/payment-settings/{id}', [SuperAdminController::class, 'deletePaymentSetting'])->name('superadmin.payment-settings.delete');
 
     // CRUD Berita
     Route::get('superadmin/berita', [SuperAdminController::class, 'beritaIndex'])->name('superadmin.berita');
