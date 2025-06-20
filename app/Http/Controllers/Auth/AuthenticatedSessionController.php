@@ -28,6 +28,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        // ✅ Cek dan buat relasi 'member' jika belum ada
+        if ($user->role === 'member' && !$user->member) {
+            $user->member()->create(); // buat data member kosong
+        }
+
         $url = 'dashboard';
 
         if ($request->user()->role === 'admin') {
