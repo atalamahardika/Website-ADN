@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CmsLandingSection;
+use App\Models\Member;
+use App\Models\Membership;
+use App\Models\MembershipPayment;
+use App\Models\PaymentSetting;
 use App\Models\PublicationMember;
 use App\Models\PublicationOrganization;
 use App\Models\SubDivision;
@@ -20,7 +24,8 @@ use App\Models\News;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use App\Models\TriDharma;
-use App\Models\LandingContent;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MembershipExport; // Nanti akan kita buat
 
 
 class SuperAdminController extends Controller
@@ -386,22 +391,332 @@ class SuperAdminController extends Controller
         return redirect()->route('superadmin.berita')->with('status', 'Berita berhasil dihapus.');
     }
 
-    public function member()
+    public function member(Request $request)
     {
+        $search = $request->get('search');
+
+        $members = Member::with('user')
+            ->when($search, function ($query, $search) {
+                return $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })
+                    ->orWhere('gelar_depan', 'like', "%{$search}%")
+                    ->orWhere('gelar_belakang_1', 'like', "%{$search}%")
+                    ->orWhere('gelar_belakang_2', 'like', "%{$search}%")
+                    ->orWhere('gelar_belakang_3', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('universitas', 'like', "%{$search}%")
+                    ->orWhere('fakultas', 'like', "%{$search}%")
+                    ->orWhere('prodi', 'like', "%{$search}%")
+                    ->orWhere('provinsi', 'like', "%{$search}%")
+                    ->orWhere('kabupaten', 'like', "%{$search}%")
+                    ->orWhere('kecamatan', 'like', "%{$search}%")
+                    ->orWhere('kelurahan', 'like', "%{$search}%");
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
         return view('user.super-admin.member', [
             'title' => 'Member ',
             'subtitle' => 'Kelola member yang ada di Aliansi Dosen Nahada (ADN).',
-            'user' => auth()->user()
+            'user' => auth()->user(),
+            'members' => $members,
+            'search' => $search
         ]);
     }
 
-    public function membership()
+    // Method yang sudah ada
+    public function membership(Request $request)
     {
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $division = $request->get('division');
+
+        $query = Membership::with(['member.user', 'division', 'payments'])
+            ->whereHas('member.user');
+
+        // Filter search
+        if ($search) {
+            $query->whereHas('member.user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            })->orWhere('id_member_organization', 'like', "%{$search}%");
+        }
+
+        // Filter status
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Filter division
+        if ($division) {
+            $query->where('division_id', $division);
+        }
+
+        $memberships = $query->orderBy('created_at', 'desc')->paginate(20);
+        $divisions = Division::all();
+
+        // Ambil data payment settings untuk CRUD
+        $paymentSettings = PaymentSetting::orderBy('created_at', 'desc')->get();
+
         return view('user.super-admin.membership', [
             'title' => 'Membership Keanggotaan',
             'subtitle' => 'Kelola membership yang ada di Aliansi Dosen Nahada (ADN).',
             'user' => auth()->user(),
+            'memberships' => $memberships,
+            'divisions' => $divisions,
+            'paymentSettings' => $paymentSettings, // Tambahkan payment settings data
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'division' => $division
+            ]
         ]);
+    }
+
+    // Method untuk melihat detail membership dan pembayaran
+    public function membershipDetail($id)
+    {
+        $membership = Membership::with(['member.user', 'division', 'payments.approvedBy'])
+            ->findOrFail($id);
+
+        // Tambahkan divisions untuk dropdown pada form edit
+        $divisions = Division::all();
+
+        return view('user.super-admin.membership-detail', [
+            'title' => 'Detail Membership',
+            'subtitle' => 'Detail membership ' . $membership->member->user->name,
+            'user' => auth()->user(),
+            'membership' => $membership,
+            'divisions' => $divisions // Tambahkan divisions data
+        ]);
+    }
+
+    // Method untuk approve payment
+    public function approvePayment(Request $request, $paymentId)
+    {
+        $validated = Validator::make($request->all(), [
+            'id_member_organization' => 'required|string|max:255|unique:memberships,id_member_organization,' . $request->membership_id,
+            'division_id' => 'nullable|exists:divisions,id',
+            'invoice_link' => 'required|url',
+        ], [
+            'id_member_organization.unique' => 'Maaf id member tersebut sudah digunakan, mohon ganti ke id yang berbeda.',
+        ]);
+
+        if ($validated->fails()) {
+            return redirect()->back()
+                ->withErrors($validated)
+                ->withInput()
+                ->with('modal', 'approvePaymentModal' . $paymentId);
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $payment = MembershipPayment::with('membership')->findOrFail($paymentId);
+
+            if ($payment->status !== 'pending') {
+                throw new \Exception('Pembayaran sudah diproses sebelumnya.');
+            }
+
+            // Approve payment
+            $validatedData = $validated->validated();
+
+            $payment->approve(
+                auth()->id(),
+                $validatedData['invoice_link'] ?? null
+            );
+
+            // Update membership data
+            $membership = $payment->membership;
+
+            // Set ID member organization jika belum ada
+            if (!$membership->id_member_organization && $validatedData['id_member_organization']) {
+                $membership->id_member_organization = $validatedData['id_member_organization'];
+            }
+
+            // Set division jika dipilih
+            if (!empty($validatedData['division_id'])) {
+                $membership->division_id = $validatedData['division_id'];
+            }
+
+            $membership->save();
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Pembayaran berhasil disetujui dan membership telah diaktifkan.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function rejectPayment(Request $request, $paymentId)
+    {
+        $validated = $request->validate([
+            'admin_notes' => 'required|string|max:1000'
+        ]);
+
+        try {
+            $payment = MembershipPayment::findOrFail($paymentId);
+
+            if ($payment->status !== 'pending') {
+                throw new \Exception('Pembayaran sudah diproses sebelumnya.');
+            }
+
+            // Update payment status
+            $payment->update([
+                'status' => 'rejected',
+                'processed_by' => auth()->id(),
+                'processed_at' => now(),
+                'admin_notes' => $validated['admin_notes']
+            ]);
+
+            // Update membership status juga menjadi rejected
+            $payment->membership->update([
+                'status' => 'rejected'
+            ]);
+
+            return redirect()->back()->with('success', 'Pembayaran berhasil ditolak dan status membership diubah menjadi rejected.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk update membership data
+    public function updateMembership(Request $request, $id)
+    {
+        $membership = Membership::findOrFail($id);
+        $validator = Validator::make($request->all(), [
+            // PERBAIKAN: Gunakan $id dari parameter URL untuk mengabaikan record saat ini
+            'id_member_organization' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('memberships', 'id_member_organization')->ignore($id),
+            ],
+            'division_id' => 'nullable|exists:divisions,id',
+        ], [
+            'id_member_organization.unique' => 'Maaf ID member tersebut sudah digunakan, mohon ganti ke ID yang berbeda.',
+        ]);
+
+        try {
+            $validatedData = $validator->validated();
+            $membership = Membership::findOrFail($id);
+            $membership->update($validatedData);
+
+            return redirect()->back()->with('success', 'Data membership berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk export data ke Excel
+    public function exportMembership(Request $request)
+    {
+        $status = $request->get('status');
+        $division = $request->get('division');
+
+        return Excel::download(new MembershipExport($status, $division), 'membership-data-' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    // === PAYMENT SETTINGS CRUD ===
+    // Method untuk store payment setting (dipindahkan dari paymentSettings)
+    public function storePaymentSetting(Request $request)
+    {
+        $validated = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'account_holder' => 'required|string|max:255',
+            'payment_amount' => 'required|numeric|min:0'
+        ]);
+
+        try {
+            // Nonaktifkan semua payment setting yang ada
+            PaymentSetting::where('is_active', true)->update(['is_active' => false]);
+
+            // Buat payment setting baru sebagai yang aktif
+            PaymentSetting::create([
+                'bank_name' => $validated['bank_name'],
+                'account_number' => $validated['account_number'],
+                'account_holder' => $validated['account_holder'],
+                'payment_amount' => $validated['payment_amount'],
+                'is_active' => true
+            ]);
+
+            return redirect()->route('superadmin.membership')->with('success', 'Pengaturan pembayaran berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('superadmin.membership')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk update payment setting (dipindahkan dari paymentSettings)
+    public function updatePaymentSetting(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'account_holder' => 'required|string|max:255',
+            'payment_amount' => 'required|numeric|min:0'
+        ]);
+
+        try {
+            $paymentSetting = PaymentSetting::findOrFail($id);
+            $paymentSetting->update($validated);
+
+            return redirect()->route('superadmin.membership')->with('success', 'Pengaturan pembayaran berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('superadmin.membership')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk set payment setting sebagai aktif (dipindahkan dari paymentSettings)
+    public function activatePaymentSetting($id)
+    {
+        try {
+            \DB::beginTransaction();
+
+            // Nonaktifkan semua payment setting
+            PaymentSetting::where('is_active', true)->update(['is_active' => false]);
+
+            // Aktifkan payment setting yang dipilih
+            $paymentSetting = PaymentSetting::findOrFail($id);
+            $paymentSetting->is_active = true;
+            $paymentSetting->save();
+
+            \DB::commit();
+
+            return redirect()->route('superadmin.membership')->with('success', 'Pengaturan pembayaran berhasil diaktifkan.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->route('superadmin.membership')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk delete payment setting (dipindahkan dari paymentSettings)
+    public function deletePaymentSetting($id)
+    {
+        try {
+            $paymentSetting = PaymentSetting::findOrFail($id);
+
+            if ($paymentSetting->is_active) {
+                return redirect()->route('superadmin.membership')->with('error', 'Tidak dapat menghapus pengaturan pembayaran yang sedang aktif.');
+            }
+
+            $paymentSetting->delete();
+
+            return redirect()->route('superadmin.membership')->with('success', 'Pengaturan pembayaran berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('superadmin.membership')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function publikasiIndex()
