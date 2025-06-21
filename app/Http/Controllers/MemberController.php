@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -21,26 +22,27 @@ class MemberController extends Controller
     public function dashboard(Request $request)
     {
         $user = auth()->user();
-        $publications = $user->member->publications()->latest()->paginate(5);
+        $publications = $user->member ? $user->member->publications()->latest()->paginate(5) : collect();
         return view('user.member.dashboard', [
             'title' => 'Dashboard ' . ucwords($user->role),
             'subtitle' => 'Halo ' . $user->name . ', selamat datang di Dashboard Aliansi Dosen Nahada (ADN).',
             'user' => $user,
-            'scientificFields' => $user->member->scientificFields,
-            'skills' => $user->member->skills,
-            'educationalHistories' => $user->member->educationalHistories,
-            'awards' => $user->member->awards,
-            'teachingHistories' => $user->member->teachingHistories,
-            'publications' => $publications,
+            'scientificFields' => $user->member->scientificFields ?? collect(),
+            'skills' => $user->member->skills ?? collect(),
+            'educationalHistories' => $user->member->educationalHistories ?? collect(),
+            'awards' => $user->member->awards ?? collect(),
+            'teachingHistories' => $user->member->teachingHistories ?? collect(),
+            'publications' => $publications ?? collect(),
         ]);
     }
 
     public function biografi(Request $request)
     {
+        $user = auth()->user();
         return view('user.member.biografi', [
             'title' => 'Biografi Saya ',
             'subtitle' => 'Kelola biografi saya',
-            'user' => auth()->user()
+            'user' => $user
         ]);
     }
 
@@ -427,6 +429,7 @@ class MemberController extends Controller
                 'required',
                 'string',
                 'max:16',
+                'min:16',
                 Rule::unique('members', 'nik')->ignore($member?->id),
             ],
             'tempat_lahir' => 'required|string|max:255',
@@ -564,12 +567,454 @@ class MemberController extends Controller
         return redirect()->route('ganti-password')->with('status', 'Password berhasil diperbarui.');
     }
 
+    // Method yang sudah ada
     public function showKeanggotaan()
     {
+        $user = auth()->user();
+        $member = $user->member;
+        $membership = $member ? $member->membership : null;
+        $paymentSetting = PaymentSetting::getActiveSetting();
+
+        // Get pending payment if exists
+        $pendingPayment = null;
+        if ($membership) {
+            $pendingPayment = $membership->getPendingPayment();
+        }
+
+        // Get payment history
+        $paymentHistory = [];
+        if ($membership) {
+            $paymentHistory = $membership->getApprovedPayments();
+        }
+
+        // Get admin notes from membership_payment for rejected status
+        // $rejectedPaymentNotes = null;
+        // if ($membership && $membership->payments()->where('status', 'rejected')->exists()) {
+        //     $rejectedPayment = $membership->payments()
+        //         ->where('status', 'rejected')
+        //         ->latest()
+        //         ->first();
+        //     $rejectedPaymentNotes = $rejectedPayment ? $rejectedPayment->admin_notes : null;
+        // }
+
+        // Variabel untuk menyimpan catatan admin dari pembayaran yang ditolak
+        $rejectedPaymentNotes = null;
+        // Variabel untuk menandai apakah pembayaran terakhir yang ditolak adalah tipe 'renewal'
+        $isLastRejectedPaymentRenewal = false;
+
+        // Mengecek apakah ada membership dan statusnya ditolak
+        if ($membership && $membership->status === 'rejected') {
+            // Mencari pembayaran terakhir yang ditolak untuk mendapatkan catatan dan tipe pembayaran
+            $rejectedPayment = $membership->payments()
+                ->where('status', 'rejected')
+                ->latest() // Ambil yang terbaru
+                ->first();
+
+            if ($rejectedPayment) {
+                $rejectedPaymentNotes = $rejectedPayment->admin_notes;
+                // Jika tipe pembayaran yang ditolak adalah 'renewal', set flag
+                if ($rejectedPayment->payment_type === 'renewal') {
+                    $isLastRejectedPaymentRenewal = true;
+                }
+            }
+        }
+
         return view('user.member.keanggotaan', [
             'title' => 'Keanggotaan Saya',
             'subtitle' => 'Kelola keanggotaan saya',
-            'user' => auth()->user()
+            'user' => $user,
+            'member' => $member,
+            'membership' => $membership,
+            'paymentSetting' => $paymentSetting,
+            'pendingPayment' => $pendingPayment,
+            'paymentHistory' => $paymentHistory,
+            'rejectedPaymentNotes' => $rejectedPaymentNotes,
+            'isLastRejectedPaymentRenewal' => $isLastRejectedPaymentRenewal,
         ]);
+    }
+
+    // Method untuk proses pendaftaran membership - UPDATED
+    public function registerMembership(Request $request)
+    {
+        $user = auth()->user();
+        $member = $user->member;
+
+        // Validasi apakah member sudah ada
+        if (!$member) {
+            return redirect()->back()->with('error', 'Harap lengkapi profil terlebih dahulu.');
+        }
+
+        // PERUBAHAN LOGIKA: Cek apakah sudah ada membership yang pending
+        // Hanya tolak jika statusnya pending, bukan rejected
+        if ($member->membership && $member->membership->status === 'pending') {
+            return redirect()->back()->with('error', 'Anda sudah memiliki pendaftaran yang sedang menunggu konfirmasi.');
+        }
+
+        // Validasi form pendaftaran
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'gelar_depan' => 'nullable|string|max:255',
+            'gelar_belakang_1' => 'nullable|string|max:255',
+            'gelar_belakang_2' => 'nullable|string|max:255',
+            'gelar_belakang_3' => 'nullable|string|max:255',
+            'nik' => [
+                'required',
+                'string',
+                'max:16',
+                'min:16',
+                Rule::unique('members', 'nik')->ignore($member->id),
+            ],
+            'tempat_lahir' => 'required|string|max:255',
+            'tanggal_lahir' => 'nullable|date',
+            'no_hp' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
+            'alamat_jalan' => 'required|string',
+            'provinsi' => 'nullable|string',
+            'kabupaten' => 'nullable|string',
+            'kecamatan' => 'nullable|string',
+            'kelurahan' => 'nullable|string',
+            'kode_pos' => 'nullable|string|max:10',
+            'email_institusi' => 'nullable|email|max:255',
+            'universitas' => 'required|string|max:255',
+            'fakultas' => 'required|string|max:255',
+            'prodi' => 'required|string|max:255',
+            'payment_proof_link' => 'required|url'
+        ]);
+
+        // Ambil nama wilayah berdasarkan ID
+        $provinsi = DB::table('provinces')->where('prov_id', $request->provinsi)->value('prov_name');
+        $kabupaten = DB::table('cities')->where('city_id', $request->kabupaten)->value('city_name');
+        $kecamatan = DB::table('districts')->where('dis_id', $request->kecamatan)->value('dis_name');
+        $kelurahan = DB::table('subdistricts')->where('subdis_id', $request->kelurahan)->value('subdis_name');
+
+        try {
+            \DB::beginTransaction();
+
+            // Update data user
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email']
+            ]);
+
+            // Update data member
+            $member->update([
+                'gelar_depan' => $validated['gelar_depan'],
+                'gelar_belakang_1' => $validated['gelar_belakang_1'],
+                'gelar_belakang_2' => $validated['gelar_belakang_2'],
+                'gelar_belakang_3' => $validated['gelar_belakang_3'],
+                'nik' => $validated['nik'],
+                'tempat_lahir' => $validated['tempat_lahir'],
+                'tanggal_lahir' => $validated['tanggal_lahir'],
+                'no_hp' => $validated['no_hp'],
+                'no_wa' => $validated['no_wa'],
+                'alamat_jalan' => $validated['alamat_jalan'],
+                'provinsi' => $provinsi,
+                'kabupaten' => $kabupaten,
+                'kecamatan' => $kecamatan,
+                'kelurahan' => $kelurahan,
+                'kode_pos' => $validated['kode_pos'],
+                'email_institusi' => $validated['email_institusi'],
+                'universitas' => $validated['universitas'],
+                'fakultas' => $validated['fakultas'],
+                'prodi' => $validated['prodi']
+            ]);
+
+            // PERUBAHAN LOGIKA MEMBERSHIP
+            if (!$member->membership) {
+                // Jika belum ada membership, buat baru
+                $membership = $member->createMembership();
+            } else {
+                // Jika sudah ada membership (termasuk yang rejected), 
+                // overwrite status menjadi pending
+                $membership = $member->membership;
+                $membership->status = 'pending';
+                $membership->save();
+            }
+
+            // Ambil payment setting yang aktif
+            $paymentSetting = PaymentSetting::getActiveSetting();
+            if (!$paymentSetting) {
+                throw new \Exception('Pengaturan pembayaran tidak ditemukan. Silakan hubungi administrator.');
+            }
+
+            // Tentukan tipe pembayaran
+            $paymentType = $membership->payments()->approved()->exists() ? 'renewal' : 'new_registration';
+
+            // SELALU BUAT RECORD PEMBAYARAN BARU (tidak overwrite)
+            // Baik untuk membership baru maupun yang sudah ada (termasuk rejected)
+            $membership->payments()->create([
+                'payment_type' => $paymentType,
+                'amount' => $paymentSetting->payment_amount,
+                'bank_name' => $paymentSetting->bank_name,
+                'account_number' => $paymentSetting->account_number,
+                'account_holder' => $paymentSetting->account_holder,
+                'payment_proof_link' => $validated['payment_proof_link'],
+                'status' => 'pending'
+            ]);
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Pendaftaran membership berhasil dikirim. Menunggu konfirmasi dari Super Admin.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk renewal membership - UPDATED
+    public function renewMembership(Request $request)
+    {
+        $user = auth()->user();
+        $member = $user->member;
+        $membership = $member->membership;
+
+        // PERUBAHAN LOGIKA: Allow renewal jika status inactive ATAU rejected
+        if (!$membership || !in_array($membership->status, ['inactive', 'rejected'])) {
+            return redirect()->back()->with('error', 'Membership tidak dapat diperpanjang saat ini.');
+        }
+
+        // Cek apakah ada payment yang pending
+        if ($membership->getPendingPayment()) {
+            return redirect()->back()->with('error', 'Masih ada pembayaran yang menunggu konfirmasi.');
+        }
+
+        $validated = $request->validate([
+            'payment_proof_link' => 'required|url'
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            $paymentSetting = PaymentSetting::getActiveSetting();
+            if (!$paymentSetting) {
+                throw new \Exception('Pengaturan pembayaran tidak ditemukan.');
+            }
+
+            // Update status membership ke pending (overwrite)
+            $membership->status = 'pending';
+            $membership->save();
+
+            // Buat record pembayaran renewal BARU (tidak overwrite)
+            $membership->payments()->create([
+                'payment_type' => 'renewal',
+                'amount' => $paymentSetting->payment_amount,
+                'bank_name' => $paymentSetting->bank_name,
+                'account_number' => $paymentSetting->account_number,
+                'account_holder' => $paymentSetting->account_holder,
+                'payment_proof_link' => $validated['payment_proof_link'],
+                'status' => 'pending'
+            ]);
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Perpanjangan membership berhasil dikirim. Menunggu konfirmasi dari Super Admin.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    // Method baru untuk handle re-registration setelah rejection
+    public function reRegisterMembership(Request $request)
+    {
+        $user = auth()->user();
+        $member = $user->member;
+
+        // Validasi apakah member sudah ada
+        if (!$member) {
+            return redirect()->back()->with('error', 'Harap lengkapi profil terlebih dahulu.');
+        }
+
+        // Hanya boleh re-register jika status membership rejected
+        if (!$member->membership || $member->membership->status !== 'rejected') {
+            return redirect()->back()->with('error', 'Tidak dapat mendaftar ulang. Status membership tidak valid.');
+        }
+
+        // Cek apakah pembayaran terakhir yang ditolak adalah 'new_registration'
+        $lastRejectedPayment = $member->membership->payments()->where('status', 'rejected')->latest()->first();
+        if (!$lastRejectedPayment || $lastRejectedPayment->payment_type !== 'new_registration') {
+            return redirect()->back()->with('error', 'Anda tidak dalam skenario pendaftaran ulang yang ditolak.');
+        }
+
+        // Validasi form (sama dengan registerMembership)
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'gelar_depan' => 'nullable|string|max:255',
+            'gelar_belakang_1' => 'nullable|string|max:255',
+            'gelar_belakang_2' => 'nullable|string|max:255',
+            'gelar_belakang_3' => 'nullable|string|max:255',
+            'nik' => [
+                'required',
+                'string',
+                'max:16',
+                'min:16',
+                Rule::unique('members', 'nik')->ignore($member->id),
+            ],
+            'tempat_lahir' => 'required|string|max:255',
+            'tanggal_lahir' => 'nullable|date',
+            'no_hp' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
+            'alamat_jalan' => 'required|string',
+            'provinsi' => 'nullable|string',
+            'kabupaten' => 'nullable|string',
+            'kecamatan' => 'nullable|string',
+            'kelurahan' => 'nullable|string',
+            'kode_pos' => 'nullable|string|max:10',
+            'email_institusi' => 'nullable|email|max:255',
+            'universitas' => 'required|string|max:255',
+            'fakultas' => 'required|string|max:255',
+            'prodi' => 'required|string|max:255',
+            'payment_proof_link' => 'required|url'
+        ]);
+
+        // Ambil nama wilayah berdasarkan ID
+        $provinsi = DB::table('provinces')->where('prov_id', $request->provinsi)->value('prov_name');
+        $kabupaten = DB::table('cities')->where('city_id', $request->kabupaten)->value('city_name');
+        $kecamatan = DB::table('districts')->where('dis_id', $request->kecamatan)->value('dis_name');
+        $kelurahan = DB::table('subdistricts')->where('subdis_id', $request->kelurahan)->value('subdis_name');
+
+        try {
+            \DB::beginTransaction();
+
+            // Update data user
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email']
+            ]);
+
+            // Update data member
+            $member->update([
+                'gelar_depan' => $validated['gelar_depan'],
+                'gelar_belakang_1' => $validated['gelar_belakang_1'],
+                'gelar_belakang_2' => $validated['gelar_belakang_2'],
+                'gelar_belakang_3' => $validated['gelar_belakang_3'],
+                'nik' => $validated['nik'],
+                'tempat_lahir' => $validated['tempat_lahir'],
+                'tanggal_lahir' => $validated['tanggal_lahir'],
+                'no_hp' => $validated['no_hp'],
+                'no_wa' => $validated['no_wa'],
+                'alamat_jalan' => $validated['alamat_jalan'],
+                'provinsi' => $provinsi,
+                'kabupaten' => $kabupaten,
+                'kecamatan' => $kecamatan,
+                'kelurahan' => $kelurahan,
+                'kode_pos' => $validated['kode_pos'],
+                'email_institusi' => $validated['email_institusi'],
+                'universitas' => $validated['universitas'],
+                'fakultas' => $validated['fakultas'],
+                'prodi' => $validated['prodi']
+            ]);
+
+            // Overwrite status membership dari rejected ke pending
+            $membership = $member->membership;
+            $membership->status = 'pending';
+            $membership->save();
+
+            // Ambil payment setting yang aktif
+            $paymentSetting = PaymentSetting::getActiveSetting();
+            if (!$paymentSetting) {
+                throw new \Exception('Pengaturan pembayaran tidak ditemukan. Silakan hubungi administrator.');
+            }
+
+            // Tentukan tipe pembayaran
+            $paymentType = $membership->payments()->approved()->exists() ? 'renewal' : 'new_registration';
+
+            // Buat record pembayaran BARU (tidak overwrite yang rejected)
+            $membership->payments()->create([
+                'payment_type' => $paymentType,
+                'amount' => $paymentSetting->payment_amount,
+                'bank_name' => $paymentSetting->bank_name,
+                'account_number' => $paymentSetting->account_number,
+                'account_holder' => $paymentSetting->account_holder,
+                'payment_proof_link' => $validated['payment_proof_link'],
+                'status' => 'pending'
+            ]);
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Pendaftaran ulang membership berhasil dikirim. Menunggu konfirmasi dari Super Admin.');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function reRenewMembership(Request $request)
+    {
+        $user = auth()->user();
+        $member = $user->member;
+        $membership = $member->membership;
+
+        // Hanya boleh re-renew jika member ada dan status membership rejected
+        if (!$member || !$membership || $membership->status !== 'rejected') {
+            return redirect()->back()->with('error', 'Tidak dapat melakukan perpanjangan ulang. Status membership tidak valid.');
+        }
+
+        // Cek apakah pembayaran terakhir yang ditolak adalah 'renewal'
+        $lastRejectedPayment = $membership->payments()->where('status', 'rejected')->latest()->first();
+        if (!$lastRejectedPayment || $lastRejectedPayment->payment_type !== 'renewal') {
+            return redirect()->back()->with('error', 'Anda tidak dalam skenario perpanjangan ulang yang ditolak.');
+        }
+
+        // Cek apakah ada pembayaran lain yang sedang pending
+        if ($membership->getPendingPayment()) {
+            return redirect()->back()->with('error', 'Masih ada pembayaran yang menunggu konfirmasi untuk membership ini.');
+        }
+
+        // Validasi hanya untuk link bukti pembayaran
+        $validated = $request->validate([
+            'payment_proof_link' => 'required|url'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $paymentSetting = PaymentSetting::getActiveSetting();
+            if (!$paymentSetting) {
+                throw new \Exception('Pengaturan pembayaran tidak ditemukan.');
+            }
+
+            // Update status membership ke pending (mengindikasikan pengajuan perpanjangan ulang baru)
+            $membership->status = 'pending';
+            $membership->save();
+
+            // Buat record pembayaran renewal BARU
+            $membership->payments()->create([
+                'payment_type' => 'renewal', // Pastikan tipe ini 'renewal'
+                'amount' => $paymentSetting->payment_amount,
+                'bank_name' => $paymentSetting->bank_name,
+                'account_number' => $paymentSetting->account_number,
+                'account_holder' => $paymentSetting->account_holder,
+                'payment_proof_link' => $validated['payment_proof_link'],
+                'status' => 'pending'
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Perpanjangan ulang membership berhasil dikirim. Menunggu konfirmasi dari Super Admin.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }
