@@ -3,9 +3,6 @@
 <div class="sidebar-menu flex-grow p-4">
     <div class="card p-3 rounded-2xl" style="background-color: #EDF4EA; border-color: #0BAF6A; border-width: 1px;">
         <div class="flex flex-col gap-2">
-            {{-- <a href="{{ route('dashboard') }}"
-                class="{{ request()->routeIs('dashboard') ? 'text-green-700' : '' }}">Dashboard</a> --}}
-
             @if ($user->role === 'member')
                 <a href="{{ route('dashboard') }}"
                     class="{{ request()->routeIs('dashboard') ? 'text-green-700' : '' }}">Dashboard</a>
