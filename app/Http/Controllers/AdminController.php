@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Membership;
 use App\Models\SubDivision;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -241,10 +243,82 @@ class AdminController extends Controller
 
     public function anggota(Request $request)
     {
+        $search = $request->get('search');
+        // Eager load relasi 'division' pada user yang login.
+        // Ini memastikan $user->division akan berisi objek Division atau null.
+        $user = auth()->user()->load('division');
+
+        // PERBAIKAN: Hanya cek apakah relasi division ada dan tidak null
+        // Karena tidak ada kolom division_id langsung di tabel users
+        if (!$user->division) { // Jika user (admin) tidak terhubung ke divisi manapun
+            // Membuat instance Paginator kosong agar tampilan tidak error
+            $memberships = new LengthAwarePaginator(
+                [], // Item kosong
+                0,  // Total count 0
+                12, // Per page (sesuai pagination yang kamu gunakan)
+                1,  // Current page
+                ['path' => LengthAwarePaginator::resolveCurrentPath()] // Path untuk pagination links
+            );
+
+            return view('user.admin.anggota', [
+                'title' => 'Anggota Divisi',
+                'subtitle' => 'Daftar anggota dalam divisi Anda',
+                'user' => $user, // Kirim objek user (sudah di-load relasinya)
+                'memberships' => $memberships,
+                'search' => $search
+            ]);
+        }
+
+        // Dapatkan ID divisi dari admin yang sedang login melalui relasi 'division'
+        $adminDivisionId = $user->division->id;
+
+        // Inisialisasi query dengan eager loading yang diperlukan.
+        // Relasi `member.user` dan `division` pada Membership diperlukan untuk tampilan card.
+        $query = Membership::with(['member.user', 'division']);
+
+        // Filter berdasarkan division_id yang dikelola oleh admin yang login.
+        // PERBAIKAN UTAMA: Gunakan $adminDivisionId yang didapat dari relasi.
+        $query->where('division_id', $adminDivisionId);
+
+        // Jika ada pencarian, tambahkan kondisi search.
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                // Search di tabel members (melalui relasi member)
+                $q->whereHas('member', function ($memberQuery) use ($search) {
+                    $memberQuery->where('email_institusi', 'LIKE', "%{$search}%")
+                        ->orWhere('universitas', 'LIKE', "%{$search}%")
+                        ->orWhere('fakultas', 'LIKE', "%{$search}%")
+                        ->orWhere('prodi', 'LIKE', "%{$search}%")
+                        ->orWhere('no_hp', 'LIKE', "%{$search}%")
+                        ->orWhere('no_wa', 'LIKE', "%{$search}%")
+                        // Grouping untuk kolom alamat
+                        ->orWhere(function ($addressQuery) use ($search) {
+                            $addressQuery->where('provinsi', 'LIKE', "%{$search}%")
+                                ->orWhere('kabupaten', 'LIKE', "%{$search}%")
+                                ->orWhere('kecamatan', 'LIKE', "%{$search}%")
+                                ->orWhere('kelurahan', 'LIKE', "%{$search}%")
+                                ->orWhere('alamat_jalan', 'LIKE', "%{$search}%"); // Tambahkan alamat_jalan
+                        })
+                        ->orWhere('tempat_lahir', 'LIKE', "%{$search}%")
+                        ->orWhere('nik', 'LIKE', "%{$search}%");
+                })
+                    // Search di tabel users (melalui relasi member.user)
+                    ->orWhereHas('member.user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('email', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        // Paginate hasil
+        $memberships = $query->orderBy('created_at', 'desc')->paginate(12);
+
         return view('user.admin.anggota', [
-            'title' => 'Anggota Divisi ',
-            'subtitle' => 'Selamat datang di halaman anggota. Anda bisa mengelola informasi terkait anggota.',
-            'user' => auth()->user()
+            'title' => 'Anggota Divisi',
+            'subtitle' => 'Daftar anggota dalam divisi Anda',
+            'user' => $user,
+            'memberships' => $memberships,
+            'search' => $search
         ]);
     }
 
