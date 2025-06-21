@@ -10,7 +10,8 @@
             {{-- Tulis kode di bawah ini untuk isi kontennya --}}
             @if (!$user->division)
                 <div class="alert alert-warning">
-                    <strong>Perhatian:</strong> Anda belum ditugaskan sebagai penanggung jawab divisi manapun.
+                    <strong>Perhatian:</strong> Anda tidak mengelola divisi manapun. Silakan hubungi Super Admin untuk
+                    penugasan.
                 </div>
             @else
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -90,26 +91,6 @@
                         </div>
                     </form>
                 </x-modal>
-
-                {{-- Modal Edit --}}
-                {{-- <x-modal id="modalEditSubDivisi{{ $sub->id }}" title="Edit Sub Divisi">
-                    <form action="{{ route('admin.subdivisi.update', $sub->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-4">
-                            <label for="title{{ $sub->id }}" class="form-label">Wilayah Sub Divisi</label>
-                            <input type="text" name="title" id="title{{ $sub->id }}" class="form-control"
-                                required value="{{ $sub->title }}">
-                        </div>
-                        <div class="mb-4">
-                            <label for="description{{ $sub->id }}" class="form-label">Deskripsi</label>
-                            <textarea name="description" id="description{{ $sub->id }}" class="form-control editor" rows="5">{{ $sub->description }}</textarea>
-                        </div>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-success">Simpan Perubahan</button>
-                        </div>
-                    </form>
-                </x-modal> --}}
             @endif
         </x-layout.content-bar>
     </div>
