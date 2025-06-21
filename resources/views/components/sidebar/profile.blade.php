@@ -1,20 +1,5 @@
 @props(['user'])
 
-@php
-    $gelarDepan = $user->member->gelar_depan ?? null;
-    $gelarBelakang = collect([
-        $user->member->gelar_belakang_1 ?? null,
-        $user->member->gelar_belakang_2 ?? null,
-        $user->member->gelar_belakang_3 ?? null,
-    ])
-        ->filter()
-        ->implode(', ');
-
-    $namaLengkap = trim(
-        ($gelarDepan ? $gelarDepan . ' ' : '') . $user->name . ($gelarBelakang ? ', ' . $gelarBelakang : ''),
-    );
-@endphp
-
 <div class="sidebar-profile flex-grow px-4 pt-4">
     <div class="flex justify-center card py-4" style="background-color: #EDF4EA; border-color: #0BAF6A;">
         <div>
@@ -24,7 +9,10 @@
             </div>
 
             <div class="text-center mb-4">
-                <span class="fw-bold">{{ $namaLengkap }}</span>
+                @if ($user->role === 'member')
+                    <span class="fw-bold">{{ $user->member->full_name }}</span>
+                @endif
+                <span class="fw-bold">{{ $user->name }}</span>
 
                 {{-- Keterangan di bawah nama untuk user role admin --}}
                 @if ($user->role === 'admin')
@@ -34,6 +22,21 @@
                         @else
                             <div class="text-danger">Anda belum mengelola divisi manapun. Hubungi Super Admin.</div>
                         @endif
+                    </div>
+                @endif
+
+                {{-- Keterangan di bawah nama untuk user role member --}}
+                @php
+                    $membership = optional(optional($user->member)->membership);
+                @endphp
+                @if ($user->role === 'member' && in_array($membership->status, ['active', 'inactive']))
+                    <div class="membership-info">
+                        <p class="text-sm text-gray-700 mb-0">
+                            {{ $membership->id_member_organization ? 'ID Anggota ' . $membership->id_member_organization : 'No. Anggota Tidak Tersedia' }}
+                        </p>
+                        <p class="badge bg-success text-white mb-0">
+                            {{ $membership->getStatusLabelAttribute() ?? 'Status Tidak Diketahui' }}
+                        </p>
                     </div>
                 @endif
             </div>
