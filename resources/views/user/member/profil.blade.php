@@ -112,7 +112,7 @@
                     <div class="mb-4">
                         <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
                         <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="form-control"
-                            :value="old('tanggal_lahir', $user->member->tanggal_lahir ?? '')" required />
+                            :value="old('tanggal_lahir', ($user->member && $user->member->tanggal_lahir) ? $user->member->tanggal_lahir->format('Y-m-d') : '')" required />
                         <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
                     </div>
 
