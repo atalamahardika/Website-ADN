@@ -11,8 +11,9 @@
             <div class="text-center mb-4">
                 @if ($user->role === 'member')
                     <span class="fw-bold">{{ $user->member->full_name }}</span>
+                @else
+                    <span class="fw-bold">{{ $user->name }}</span>
                 @endif
-                <span class="fw-bold">{{ $user->name }}</span>
 
                 {{-- Keterangan di bawah nama untuk user role admin --}}
                 @if ($user->role === 'admin')
