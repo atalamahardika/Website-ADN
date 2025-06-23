@@ -39,7 +39,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'profile_photo' => asset('images/profile-user/template_photo_profile.png')
+            'profile_photo' => 'images/profile-user/template_photo_profile.png'
         ]);
 
         // ✅ Buat member kosong terkait user ini
