@@ -15,6 +15,9 @@
                 <x-card.stat title="Publikasi ADN" count="{{ $totalPublikasiADN }}" />
                 <x-card.stat title="Divisi" count="{{ $totalDivisi }}" />
                 <x-card.stat title="Berita" count="{{ $totalBerita }}" />
+                <x-card.stat title="Membership Aktif" count="{{ $membershipActive }}" />
+                <x-card.stat title="Membership Tidak Aktif" count="{{ $membershipInactive }}" />
+                <x-card.stat title="Membership Pending" count="{{ $membershipPending }}" />
             </div>
         </x-layout.content-bar>
     </div>
