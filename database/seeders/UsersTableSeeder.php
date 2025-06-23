@@ -17,21 +17,21 @@ class UsersTableSeeder extends Seeder
                 'email' => 'member@gmail.com',
                 'password' => Hash::make('member123'),
                 'role' => 'member',
-                'profile_photo' => asset('images/profile-user/template_photo_profile.png')
+                'profile_photo' => 'images/profile-user/template_photo_profile.png'
             ],
             [
                 'name'=> 'Admin 1',
                 'email'=> 'admin1@gmail.com',
                 'password'=> Hash::make('admin123'),
                 'role'=> 'admin',
-                'profile_photo' => asset('images/profile-user/template_photo_profile.png')
+                'profile_photo' => 'images/profile-user/template_photo_profile.png'
             ],
             [
                 'name'=> 'Super Admin',
                 'email'=> 'super.admin@gmail.com',
                 'password'=> Hash::make('superadmin123'),
                 'role'=> 'super admin',
-                'profile_photo' => asset('images/profile-user/template_photo_profile.png')
+                'profile_photo' => 'images/profile-user/template_photo_profile.png'
             ]
         ];
 
