@@ -42,7 +42,7 @@
                             <a href="{{ route('superadmin.berita.detail', $item->slug) }}"
                                 class="text-decoration-none text-dark">
                                 <div class="card d-flex flex-row berita-card">
-                                    <img src="{{ asset($item->image) }}" class="card-img-left w-25"
+                                    <img src="{{ asset('storage/' . $item->image) }}" class="card-img-left w-25"
                                         style="object-fit: cover;">
                                     <div class="card-body">
                                         <h5 class="card-title">{{ \Illuminate\Support\Str::limit($item->title, 60) }}
@@ -103,6 +103,7 @@
                         <label for="image" class="block font-semibold">Gambar Berita</label>
                         <input type="file" name="image" id="image" accept="image/*"
                             class="form-control @error('image') border-red-500 @enderror">
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
                         @error('image')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -165,53 +166,74 @@
     const preview = document.getElementById('preview');
     const croppedInput = document.getElementById('cropped_image');
 
-    image.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        const maxSize = 2 * 1024 * 1024; // 2 MB
+    // Pastikan DOM sudah dimuat sebelum Cropper dan event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        image.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            const maxSize = 2 * 1024 * 1024; // 2 MB
 
-        if (!allowedTypes.includes(file.type)) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Format Gambar Tidak Didukung',
-                text: 'Hanya diperbolehkan gambar dengan format JPG, JPEG, atau PNG.',
-            });
-            image.value = ""; // reset input
-            return;
-        }
-
-        if (file.size > maxSize) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Ukuran Gambar Terlalu Besar',
-                text: 'Ukuran maksimal gambar adalah 2MB.',
-            });
-            image.value = ""; // reset input
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            preview.src = evt.target.result;
-
-            if (cropper) cropper.destroy();
-
-            cropper = new Cropper(preview, {
-                aspectRatio: 3 / 2,
-                viewMode: 1,
-                autoCropArea: 1,
-                crop(event) {
-                    const canvas = cropper.getCroppedCanvas();
-                    canvas.toBlob(function(blob) {
-                        const reader = new FileReader();
-                        reader.onloadend = function() {
-                            croppedInput.value = reader.result;
-                        }
-                        reader.readAsDataURL(blob);
-                    }, 'image/jpeg');
+            if (!file) { // Tambahkan cek jika tidak ada file yang dipilih (user membatalkan)
+                if (cropper) {
+                    cropper.destroy();
+                    preview.src = ''; // Hapus preview
+                    croppedInput.value = ''; // Kosongkan hidden input
                 }
-            });
-        }
-        reader.readAsDataURL(file);
+                return;
+            }
+
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Format Gambar Tidak Didukung',
+                    text: 'Hanya diperbolehkan gambar dengan format JPG, JPEG, atau PNG.',
+                });
+                image.value = ""; // reset input
+                if (cropper) cropper.destroy();
+                preview.src = '';
+                croppedInput.value = '';
+                return;
+            }
+
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ukuran Gambar Terlalu Besar',
+                    text: 'Ukuran maksimal gambar adalah 2MB.',
+                });
+                image.value = ""; // reset input
+                if (cropper) cropper.destroy();
+                preview.src = '';
+                croppedInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                preview.src = evt.target.result;
+
+                // Pastikan gambar sudah dimuat di preview sebelum Cropper diinisialisasi
+                preview.onload = () => {
+                    if (cropper) cropper.destroy();
+
+                    cropper = new Cropper(preview, {
+                        aspectRatio: 3 / 2,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        crop(event) {
+                            const canvas = cropper.getCroppedCanvas();
+                            canvas.toBlob(function(blob) {
+                                const reader = new FileReader();
+                                reader.onloadend = function() {
+                                    croppedInput.value = reader.result;
+                                }
+                                reader.readAsDataURL(blob);
+                            }, 'image/jpeg', 0.9); // Tambahkan kualitas gambar (0.9 = 90%)
+                        }
+                    });
+                }; // End preview.onload
+            }
+            reader.readAsDataURL(file);
+        });
     });
 </script>
