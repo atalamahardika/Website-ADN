@@ -62,29 +62,34 @@
                                                 <span
                                                     class="text-primary">{{ $membership->id_member_organization ?? 'Belum tersedia' }}</span>
                                             </div>
+                                            <div class="mb-3">
+                                                <strong>Divisi:</strong>
+                                                <span>{{ optional($membership->division)->title ?? 'Belum diberikan admin' }}</span>
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Tanggal Bergabung:</strong>
+                                                <span>{{ $membership->created_at->format('d F Y') }}</span>
+                                            </div>
                                         @elseif ($membership->status === 'inactive')
                                             <div class="mb-3">
                                                 <strong>Nomor Anggota:</strong>
                                                 <span
                                                     class="text-primary">{{ $membership->id_member_organization ?? 'Belum tersedia' }}</span>
                                             </div>
-                                        @endif
-
-                                        <div class="mb-3">
-                                            <strong>Tanggal Bergabung:</strong>
-                                            <span>{{ $membership->created_at->format('d F Y') }}</span>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <strong>Divisi:</strong>
-                                            <span>{{ $membership->division->title }}</span>
-                                        </div>
-
-                                        @if ($membership->status === 'rejected')
+                                            <div class="mb-3">
+                                                <strong>Tanggal Bergabung:</strong>
+                                                <span>{{ $membership->created_at->format('d F Y') }}</span>
+                                            </div>
+                                        @elseif ($membership->status === 'rejected')
                                             <div class="mb-3">
                                                 <strong>Alasan Penolakan:</strong>
                                                 <span
                                                     class="text-danger">{{ $rejectedPaymentNotes ?? 'Tidak ada' }}</span>
+                                            </div>
+                                        @elseif ($membership->status === 'pending')
+                                            <div class="mb-3">
+                                                <strong>Tanggal Bergabung:</strong>
+                                                <span>{{ $membership->created_at->format('d F Y') }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -160,7 +165,8 @@
                                             </div>
                                             <div class="card-profile-user">
                                                 <h4 class="text-white">{{ auth()->user()->name }}</h4>
-                                                <p class="text-white mb-2">{{ $membership->id_member_organization }}</p>
+                                                <p class="text-white mb-2">{{ $membership->id_member_organization }}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -394,9 +400,11 @@
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="tanggal_lahir"
-                                                                        class="form-label">Tanggal Lahir</label>
+                                                                        class="form-label">Tanggal Lahir <span
+                                                                            class="text-danger">*</span></label>
                                                                     <input type="date" class="form-control"
                                                                         id="tanggal_lahir" name="tanggal_lahir"
+                                                                        required
                                                                         value="{{ old('tanggal_lahir', $user->member && $user->member->tanggal_lahir ? $user->member->tanggal_lahir->format('Y-m-d') : '') }}">
                                                                 </div>
                                                             </div>
@@ -406,19 +414,22 @@
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="no_hp" class="form-label">No.
-                                                                        HP</label>
+                                                                        HP <span class="text-danger">*</span></label>
                                                                     <input type="text" class="form-control"
                                                                         id="no_hp" name="no_hp"
-                                                                        value="{{ old('no_hp', $member->no_hp) }}">
+                                                                        value="{{ old('no_hp', $member->no_hp) }}"
+                                                                        required>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="no_wa" class="form-label">No.
-                                                                        WhatsApp</label>
+                                                                        WhatsApp <span
+                                                                            class="text-danger">*</span></label>
                                                                     <input type="text" class="form-control"
                                                                         id="no_wa" name="no_wa"
-                                                                        value="{{ old('no_wa', $member->no_wa) }}">
+                                                                        value="{{ old('no_wa', $member->no_wa) }}"
+                                                                        required>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -443,8 +454,8 @@
                                                         <div class="row">
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
-                                                                    <label for="provinsi"
-                                                                        class="form-label">Provinsi</label>
+                                                                    <label for="provinsi" class="form-label">Provinsi
+                                                                        <span class="text-danger">*</span></label>
                                                                     <select id="provinsi" name="provinsi"
                                                                         class="form-control"
                                                                         data-selected="{{ $user->member->provinsi }}"
@@ -457,7 +468,8 @@
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="kabupaten"
-                                                                        class="form-label">Kabupaten/Kota</label>
+                                                                        class="form-label">Kabupaten/Kota <span
+                                                                            class="text-danger">*</span></label>
                                                                     <select id="kabupaten" name="kabupaten"
                                                                         class="form-control"
                                                                         data-selected="{{ $user->member->kabupaten }}"
@@ -473,7 +485,8 @@
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="kecamatan"
-                                                                        class="form-label">Kecamatan</label>
+                                                                        class="form-label">Kecamatan <span
+                                                                            class="text-danger">*</span></label>
                                                                     <select id="kecamatan" name="kecamatan"
                                                                         class="form-control"
                                                                         data-selected="{{ $user->member->kecamatan }}"
@@ -486,7 +499,8 @@
                                                             <div class="col-md-6">
                                                                 <div class="mb-3">
                                                                     <label for="kelurahan"
-                                                                        class="form-label">Kelurahan</label>
+                                                                        class="form-label">Kelurahan <span
+                                                                            class="text-danger">*</span></label>
                                                                     <select id="kelurahan" name="kelurahan"
                                                                         class="form-control"
                                                                         data-selected="{{ $user->member->kelurahan }}"
@@ -499,11 +513,12 @@
                                                         </div>
 
                                                         <div class="mb-3">
-                                                            <label for="kode_pos" class="form-label">Kode Pos</label>
+                                                            <label for="kode_pos" class="form-label">Kode Pos <span
+                                                                    class="text-danger">*</span></label>
                                                             <input type="text" class="form-control" id="kode_pos"
                                                                 name="kode_pos"
                                                                 value="{{ old('kode_pos', $member->kode_pos) }}"
-                                                                readonly>
+                                                                required>
                                                         </div>
 
                                                         <div class="mb-3">
@@ -546,10 +561,11 @@
 
                                                         <div class="mb-3">
                                                             <label for="email_institusi" class="form-label">Email
-                                                                Institusi</label>
+                                                                Institusi <span class="text-danger">*</span></label>
                                                             <input type="email" class="form-control"
                                                                 id="email_institusi" name="email_institusi"
-                                                                value="{{ old('email_institusi', $member->email_institusi) }}">
+                                                                value="{{ old('email_institusi', $member->email_institusi) }}"
+                                                                required>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -784,15 +800,6 @@
                                                             -
                                                         @endif
                                                     </td>
-                                                    {{-- <td>
-                                                        @if ($payment->payment_proof_link)
-                                                            <a href="{{ $payment->payment_proof_link }}"
-                                                                target="_blank"
-                                                                class="btn btn-sm btn-outline-primary">
-                                                                <i class="fas fa-external-link-alt"></i>
-                                                            </a>
-                                                        @endif
-                                                    </td> --}}
                                                 </tr>
                                             @endforeach
                                         </tbody>
