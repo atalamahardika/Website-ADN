@@ -20,7 +20,7 @@
                     <div class="col-md-12 mb-3">
                         <a href="{{ route('guest.news.show', $item->slug) }}" class="text-decoration-none text-dark">
                             <div class="card d-flex flex-row berita-card">
-                                <img src="{{ asset($item->image) }}" class="card-img-left w-25" style="object-fit: cover;">
+                                <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}" class="card-img-left w-25" style="object-fit: cover;">
                                 <div class="card-body">
                                     <h5 class="card-title">{{ \Illuminate\Support\Str::limit($item->title, 60) }}
                                     </h5>

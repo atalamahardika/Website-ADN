@@ -12,7 +12,7 @@
 
                 <!-- Gambar -->
                 <div class="col-md-6 text-center">
-                    <img src="{{ asset($aboutImage->value) }}" alt="about" class="img-fluid rounded shadow-sm"
+                    <img src="{{ asset('storage/' . $aboutImage->value) }}" alt="about" class="img-fluid rounded shadow-sm"
                         style="object-fit: cover; max-height: 480px;">
                 </div>
             </div>

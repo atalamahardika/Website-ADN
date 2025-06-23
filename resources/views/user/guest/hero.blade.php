@@ -1,12 +1,12 @@
 @if ($heroTitle && $heroContent && $heroImage)
     <div class="hero-section d-flex align-items-center min-vh-75 py-5 py-md-5"
-        style="background-image: url('{{ asset('images/landing/bg-hero.svg') }}');
+        style="background-image: url('{{ asset('images/bg-hero.svg') }}');
         background-size: cover; background-position: center; background-repeat: no-repeat;">
         <div class="container py-5">
             <div class="row align-items-center g-4">
                 <!-- Gambar Kiri -->
                 <div class="col-md-6 text-center">
-                    <img src="{{ asset($heroImage->value) }}" alt="image" class="img-fluid" style="max-width: 550px;">
+                    <img src="{{ asset('storage/' . $heroImage->value) }}" alt="image" class="img-fluid" style="max-width: 550px;">
                 </div>
 
                 <!-- Teks Kanan -->

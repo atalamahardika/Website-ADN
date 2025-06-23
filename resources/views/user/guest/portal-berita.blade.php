@@ -34,7 +34,7 @@
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex">
                         <div class="card news-card flex-fill shadow-sm border-0">
                             <div class="ratio ratio-4x3">
-                                <img src="{{ asset($item->image) }}" class="card-img-top object-fit-cover"
+                                <img src="{{ asset('storage/' . $item->image) }}" class="card-img-top object-fit-cover"
                                     alt="Thumbnail {{ $item->title }}">
                             </div>
                             <div class="card-body d-flex flex-column">

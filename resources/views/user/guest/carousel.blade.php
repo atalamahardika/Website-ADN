@@ -10,7 +10,7 @@
         @foreach ($carouselNews as $index => $news)
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                 <a href="{{ route('guest.news.show', $news->slug ?? $news->id) }}">
-                    <img src="{{ asset($news->image) }}" class="d-block w-100 img-fluid"
+                    <img src="{{ asset('storage/' . $news->image) }}" class="d-block w-100 img-fluid"
                         style="max-height: 400px; object-fit: cover;" alt="{{ $news->title }}">
                     <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
                         <h5 class="text-white mb-0">{{ $news->title }}</h5>

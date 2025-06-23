@@ -7,7 +7,7 @@
                     @foreach ($contactContents as $contact)
                         <div class="d-flex align-items-center mb-3">
                             @if ($contact->icon)
-                                <img src="{{ asset($contact->icon) }}" alt="icon" style="width: 40px; height: 40px;"
+                                <img src="{{ asset('storage/' . $contact->icon) }}" alt="icon" style="width: 40px; height: 40px;"
                                     class="me-3">
                             @endif
                             <div class="prose mb-0">

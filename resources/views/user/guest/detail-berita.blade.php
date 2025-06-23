@@ -7,7 +7,7 @@
     </p>
 
     <div class="flex justify-center mb-6">
-        <img src="{{ asset($news->image) }}" alt="Gambar Berita"
+        <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}"
             class="rounded shadow w-full max-w-3xl object-cover aspect-[3/2]">
     </div>
 
