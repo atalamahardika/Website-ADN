@@ -20,7 +20,7 @@
 
                     <!-- Foto Profil -->
                     <div class="flex items-center gap-4">
-                        <img src="{{ Auth::user()->profile_photo_url }}" alt="Profile Photo"
+                        <img src="{{ $user->profile_photo_url }}" alt="Profile Photo"
                             class="w-24 h-24 rounded-full object-cover" id="preview-photo" />
 
                         <div class="wrapper">
