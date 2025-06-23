@@ -55,6 +55,7 @@
                         <label for="icon" class="block font-semibold">Upload Icon (opsional)</label>
                         <input type="file" name="icon" id="icon" class="form-control"
                             accept="image/png, image/jpeg, image/jpg">
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
                     </div>
 
                     {{-- Preview Icon --}}
@@ -89,7 +90,7 @@
                             <td>{{ $section->key }}</td>
                             <td>
                                 @if ($section->key === 'image')
-                                    <img src="{{ asset($section->value) }}" width="100" class="rounded shadow">
+                                    <img src="{{ asset('storage/' . $section->value) }}" width="100" class="rounded shadow">
                                 @elseif ($section->key === 'content')
                                     <div class="prose">
                                         {!! Str::limit(strip_tags($section->value), 50) !!}
@@ -100,7 +101,7 @@
                             </td>
                             <td>
                                 @if ($section->icon)
-                                    <img src="{{ asset($section->icon) }}" width="40" class="rounded">
+                                    <img src="{{ asset('storage/' . $section->icon) }}" width="40" class="rounded">
                                 @else
                                     <span class="text-muted">Tidak ada</span>
                                 @endif
@@ -112,8 +113,8 @@
                                             {{ $section->id }},
                                             '{{ $section->section }}',
                                             '{{ $section->key }}',
-                                            '{{ $section->key === 'image' ? asset($section->value) : addslashes($section->value) }}',
-                                            '{{ $section->icon ? asset($section->icon) : '' }}')">
+                                            '{{ $section->key === 'image' ? asset('storage/' . $section->value) : addslashes($section->value) }}',
+                                            '{{ $section->icon ? asset('storage/' . $section->icon) : '' }}')">
                                     Edit
                                 </button>
 
@@ -168,6 +169,7 @@
                     <div class="mb-4">
                         <label class="block font-semibold">Ganti Icon (opsional)</label>
                         <input type="file" name="icon" class="form-control" accept="image/*">
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
                     </div>
 
                     {{-- Preview Icon --}}
@@ -212,7 +214,7 @@
                                     data-id="{{ $news->id }}">
                                     <input type="hidden" name="selected_news_ids[]" value="{{ $news->id }}"
                                         data-title="{{ $news->title }}">
-                                    <img src="{{ asset($news->image) }}" class="w-full h-36 object-cover rounded">
+                                    <img src="{{ asset('storage/' . $news->image) }}" class="w-full h-36 object-cover rounded">
                                     <h6 class="font-semibold mt-2">{{ $news->title }}</h6>
                                     <button type="button"
                                         class="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded remove-news">Hapus</button>
@@ -232,13 +234,13 @@
                                 @if (!in_array($news->id, $selectedIds))
                                     <div class="news-card border rounded-lg p-2 flex flex-col justify-between"
                                         data-id="{{ $news->id }}">
-                                        <img src="{{ asset($news->image) }}"
+                                        <img src="{{ asset('storage/' . $news->image) }}"
                                             class="w-full h-36 object-cover rounded">
                                         <h6 class="font-semibold mt-2">{{ $news->title }}</h6>
                                         <button type="button"
                                             class="mt-2 bg-green-600 text-white text-xs px-2 py-1 rounded add-news"
                                             data-id="{{ $news->id }}" data-title="{{ $news->title }}"
-                                            data-image="{{ asset($news->image) }}">
+                                            data-image="{{ asset('storage/' . $news->image) }}">
                                             Tambahkan
                                         </button>
                                     </div>
@@ -275,7 +277,7 @@
                                         <span class="drag-handle cursor-move text-muted me-2">
                                             <i class="bi bi-arrows-move"></i>
                                         </span>
-                                        <img src="{{ asset($news->image) }}" class="w-16 h-16 object-cover rounded"
+                                        <img src="{{ asset('storage/' . $news->image) }}" class="w-16 h-16 object-cover rounded"
                                             alt="preview">
                                         <span class="fw-semibold">{{ $news->title }}</span>
                                     </div>
@@ -325,7 +327,7 @@
                         <div class="carousel-inner">
                             @foreach ($selectedNews as $index => $news)
                                 <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                    <img src="{{ asset($news->image) }}" class="d-block w-100 img-fluid"
+                                    <img src="{{ asset('storage/' . $news->image) }}" class="d-block w-100 img-fluid"
                                         style="max-height: 400px; object-fit: cover;"
                                         alt="Slide {{ $index + 1 }}">
                                     <div class="carousel-caption d-none d-md-block">
@@ -360,13 +362,13 @@
 
                 @if ($heroTitle && $heroContent && $heroImage)
                     <div class="hero-section d-flex align-items-center min-vh-75 py-5 py-md-5"
-                        style="background-image: url('{{ asset('images/landing/bg-hero.svg') }}');
+                        style="background-image: url('{{ asset('images/bg-hero.svg') }}');
         background-size: cover; background-position: center; background-repeat: no-repeat;">
                         <div class="container py-5">
                             <div class="row align-items-center g-4">
                                 <!-- Gambar Kiri -->
                                 <div class="col-md-6 text-center">
-                                    <img src="{{ asset($heroImage->value) }}" alt="image" class="img-fluid"
+                                    <img src="{{ asset('storage/' . $heroImage->value) }}" alt="image" class="img-fluid"
                                         style="max-width: 550px;">
                                 </div>
 
@@ -408,7 +410,7 @@
 
                                 <!-- Gambar -->
                                 <div class="col-md-6 text-center">
-                                    <img src="{{ asset($aboutImage->value) }}" alt="about"
+                                    <img src="{{ asset('storage/' . $aboutImage->value) }}" alt="about"
                                         class="img-fluid rounded shadow-sm"
                                         style="object-fit: cover; max-height: 480px;">
                                 </div>
@@ -530,7 +532,7 @@
                                 <div class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex">
                                     <div class="card news-card flex-fill shadow-sm border-0">
                                         <div class="ratio ratio-4x3">
-                                            <img src="{{ asset($item->image) }}"
+                                            <img src="{{ asset('storage/' . $item->image) }}"
                                                 class="card-img-top object-fit-cover"
                                                 alt="Thumbnail {{ $item->title }}">
                                         </div>
@@ -568,7 +570,7 @@
                                     @foreach ($contactContents as $contact)
                                         <div class="d-flex align-items-center mb-3">
                                             @if ($contact->icon)
-                                                <img src="{{ asset($contact->icon) }}" alt="icon"
+                                                <img src="{{ asset('storage/' . $contact->icon) }}" alt="icon"
                                                     style="width: 40px; height: 40px;" class="me-3">
                                             @endif
                                             <p class="mb-0 fs-5 prose">{!! $contact->value !!}</p>
@@ -744,6 +746,7 @@
             container.innerHTML = `
                 <label for="value" class="block font-semibold">Upload Gambar</label>
                 <input type="file" name="value" id="value-image" class="form-control" accept="image/jpeg,image/png,image/jpg" required>
+                <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
             `;
 
             // Sweetalert validasi gambar
@@ -955,7 +958,8 @@
             });
         } else if (key === 'image') {
             fieldContainer.innerHTML =
-                `<label class="block font-semibold">Upload Gambar Baru (opsional)</label><input type="file" name="value" class="form-control" accept="image/jpeg,image/png,image/jpg">`;
+                `<label class="block font-semibold">Upload Gambar Baru (opsional)</label><input type="file" name="value" class="form-control" accept="image/jpeg,image/png,image/jpg">
+                <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>`;
             if (value) {
                 imagePreview.src = `${value}`;
                 imagePreviewContainer.classList.remove('hidden');
