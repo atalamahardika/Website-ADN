@@ -20,14 +20,7 @@
                     </div>
 
                     <div class="col">
-                        <div class="p-4 rounded-xl text-white shadow-md h-100 d-flex flex-column justify-center align-items-center"
-                            style="background: linear-gradient(to right, #79E133, #55C733);">
-                            <h3 class="text-lg fw-semibold mb-2 text-center" style="color: white !important;">
-                                {{ $user->division->title }}
-                            </h3>
-                            <p class="h5 fw-bold mb-0 text-center" style="color: white !important;">Wilayah
-                                {{ $user->division->region }}</p>
-                        </div>
+                        <x-card.stat title="{{ $user->division->title }}" :count="'Wilayah ' . $user->division->region" />
                     </div>
 
                     <div class="col">
