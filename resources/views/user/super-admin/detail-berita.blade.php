@@ -15,7 +15,7 @@
                 </p>
 
                 <div class="flex justify-center mb-6">
-                    <img src="{{ asset($news->image) }}" alt="Gambar Berita"
+                    <img src="{{ asset('storage/' . $news->image) }}" alt="{{ $news->title }}"
                         class="rounded shadow w-full max-w-3xl object-cover aspect-[3/2]">
                 </div>
 
@@ -61,6 +61,7 @@
                                 <label for="edit_image" class="block font-semibold">Gambar Berita</label>
                                 <input type="file" name="image" id="edit_image" accept="image/*"
                                     class="form-control">
+                                <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
                                 <div class="mt-2">
                                     <img id="edit_preview" class="max-w-full h-auto rounded border mt-2">
                                 </div>
@@ -142,7 +143,7 @@
         }
 
         if (file.size > maxSize) {
-            Swal.fire('Ukuran Gambar Terlalu Besar', 'Maksimal 2MB.', 'error');
+            Swal.fire('Ukuran Gambar Terlalu Besar', 'Ukuran maksimal gambar adalah 2MB.', 'error');
             editImage.value = "";
             return;
         }
@@ -185,7 +186,7 @@
         }
 
         document.getElementById('edit_source_link').value = berita.source_link;
-        document.getElementById('edit_preview').src = "{{ asset('') }}" + berita.image;
+        document.getElementById('edit_preview').src = "{{ asset('storage') }}/" + berita.image;
 
         // ✅ Gunakan slug, bukan ID!
         const form = document.getElementById('formEditBerita');
