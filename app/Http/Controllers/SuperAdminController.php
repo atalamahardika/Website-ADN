@@ -12,12 +12,12 @@ use App\Models\PublicationOrganization;
 use App\Models\SubDivision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\File;
 use App\Models\Division;
 use App\Models\User;
 use App\Models\News;
@@ -41,6 +41,9 @@ class SuperAdminController extends Controller
         $totalPublikasiADN = PublicationOrganization::count();
         $totalDivisi = Division::count();
         $totalBerita = News::count();
+        $membershipActive = Membership::where('status', 'active')->count();
+        $membershipInactive = Membership::where('status', 'inactive')->count();
+        $membershipPending = Membership::where('status', 'pending')->count();
 
         return view('user.super-admin.dashboard', [
             'title' => 'Dashboard ' . ucwords($user->role),
@@ -52,6 +55,9 @@ class SuperAdminController extends Controller
             'totalPublikasiADN' => $totalPublikasiADN,
             'totalDivisi' => $totalDivisi,
             'totalBerita' => $totalBerita,
+            'membershipActive' => $membershipActive,
+            'membershipInactive' => $membershipInactive,
+            'membershipPending' => $membershipPending,
         ]);
     }
 
@@ -108,7 +114,6 @@ class SuperAdminController extends Controller
         return redirect()->back()->with('status', 'Divisi berhasil ditambahkan.');
     }
 
-
     public function divisionUpdate(Request $request, Division $division)
     {
         $request->validate([
@@ -129,7 +134,6 @@ class SuperAdminController extends Controller
 
         return redirect()->back()->with('status', 'Divisi berhasil diperbarui.');
     }
-
 
     public function divisionDestroy($id)
     {
@@ -198,7 +202,6 @@ class SuperAdminController extends Controller
 
         return back()->with('status', 'Status persetujuan berhasil diperbarui.');
     }
-
 
     public function adminIndex()
     {
@@ -277,7 +280,6 @@ class SuperAdminController extends Controller
         ]);
     }
 
-
     public function beritaStore(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -295,100 +297,186 @@ class SuperAdminController extends Controller
                 ->with('modal', 'modalTambahBerita');
         }
 
-        // Buat slug unik
-        $slug = Str::slug($request->title);
-        $slugExists = News::where('slug', $slug)->exists();
-        if ($slugExists) {
-            $slug .= '-' . Str::random(5);
-        }
-
-        // Proses base64 image
-        $croppedImage = $request->cropped_image;
-
-        if (preg_match('/^data:image\/(\w+);base64,/', $croppedImage, $type)) {
-            $data = substr($croppedImage, strpos($croppedImage, ',') + 1);
-            $type = strtolower($type[1]); // jpg, png, etc
-
-            $data = base64_decode($data);
-
-            if ($data === false) {
-                return back()->withErrors(['image' => 'Gagal memproses gambar.']);
+        try {
+            $slug = Str::slug($request->title);
+            $originalSlug = $slug;
+            $counter = 1;
+            while (News::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $counter++;
             }
 
-            $imagePath = "images/news/{$slug}.jpg";
-            file_put_contents(public_path($imagePath), $data);
-        } else {
-            return back()->withErrors(['image' => 'Format gambar tidak valid.']);
+            $imagePath = null;
+            $croppedImage = $request->cropped_image;
+
+            if (preg_match('/^data:image\/(\w+);base64,/', $croppedImage, $type)) {
+                $data = substr($croppedImage, strpos($croppedImage, ',') + 1);
+                $imageType = strtolower($type[1]);
+
+                $data = base64_decode($data);
+
+                if ($data === false) {
+                    return back()->withErrors(['image' => 'Gagal memproses gambar base64.']);
+                }
+
+                $fileName = $slug . '_' . time() . '.' . $imageType;
+                $directory = 'images/news';
+                $imagePath = $directory . '/' . $fileName;
+
+                Storage::disk('public')->put($imagePath, $data);
+
+            } else {
+                return back()->withErrors(['image' => 'Format gambar base64 tidak valid.']);
+            }
+
+            News::create([
+                'title' => $request->title,
+                'slug' => $slug,
+                'content' => $request->content,
+                'source_link' => $request->source_link,
+                'image' => $imagePath,
+            ]);
+
+            return redirect()->back()->with('status', 'Berita berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan berita: ' . $e->getMessage());
         }
-
-        // Simpan ke database
-        News::create([
-            'title' => $request->title,
-            'slug' => $slug,
-            'content' => $request->content,
-            'source_link' => $request->source_link,
-            'image' => $imagePath,
-        ]);
-
-        return redirect()->back()->with('status', 'Berita berhasil ditambahkan.');
     }
 
 
     public function beritaUpdate(Request $request, $slug)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
+        // Ambil berita sebelum perubahan slug
+        $news = News::where('slug', $slug)->firstOrFail();
+        $oldImagePath = $news->image; // Simpan path gambar lama untuk potensi rename/delete
+
+        $validator = Validator::make($request->all(), [
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('news', 'slug')->ignore($news->id),
+            ],
             'content' => 'required|string',
             'source_link' => 'nullable|string|max:255',
             'cropped_image' => 'nullable|string', // base64 string
         ]);
 
-        $news = News::where('slug', $slug)->firstOrFail();
-
-        // Simpan perubahan judul, slug, konten, dan sumber
-        $news->title = $request->title;
-        $news->slug = Str::slug($request->title);
-        $news->content = $request->content;
-        $news->source_link = $request->source_link;
-
-        // Tangani gambar baru jika diunggah
-        if ($request->has('cropped_image') && $request->cropped_image) {
-            // Hapus gambar lama
-            if (File::exists(public_path($news->image))) {
-                File::delete(public_path($news->image));
-            }
-
-            // Simpan gambar baru
-            $imageData = $request->cropped_image;
-            $image = str_replace('data:image/jpeg;base64,', '', $imageData);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'images/news/' . $news->slug . '.jpg';
-
-            File::ensureDirectoryExists(public_path('images/news'));
-            File::put(public_path($imageName), base64_decode($image));
-
-            $news->image = $imageName;
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'modalEditBerita');
         }
 
-        $news->save();
+        try {
+            $validatedData = $validator->validated();
 
-        // Redirect kembali ke halaman detail
-        return redirect()->route('superadmin.berita.detail', $news->slug)
-            ->with(['status' => 'Berita berhasil diperbarui!', 'modal' => null]);
+            // Simpan slug lama untuk perbandingan nanti
+            $oldSlug = $news->slug;
+
+            // Handle slug update: buat slug baru, cek keunikan jika berubah
+            $newSlug = Str::slug($validatedData['title']);
+            if ($newSlug !== $oldSlug) { // Gunakan $oldSlug untuk perbandingan
+                $originalNewSlug = $newSlug;
+                $counter = 1;
+                while (News::where('slug', $newSlug)->where('id', '!=', $news->id)->exists()) {
+                    $newSlug = $originalNewSlug . '-' . $counter++;
+                }
+                $news->slug = $newSlug; // Update slug di model
+            }
+
+            // Simpan perubahan judul, konten, dan sumber
+            $news->title = $validatedData['title'];
+            $news->content = $validatedData['content'];
+            $news->source_link = $validatedData['source_link'];
+
+            $imageHasBeenUpdated = false;
+            // Tangani gambar baru jika diunggah (base64)
+            if (isset($validatedData['cropped_image']) && $validatedData['cropped_image']) {
+                $croppedImage = $validatedData['cropped_image'];
+
+                if (preg_match('/^data:image\/(\w+);base64,/', $croppedImage, $type)) {
+                    $data = substr($croppedImage, strpos($croppedImage, ',') + 1);
+                    $imageType = strtolower($type[1]);
+
+                    $data = base64_decode($data);
+                    if ($data === false) {
+                        return back()->withErrors(['cropped_image' => 'Gagal memproses gambar base64 yang diperbarui.']);
+                    }
+
+                    // Hapus gambar lama dari Storage jika ada
+                    if ($oldImagePath && Storage::disk('public')->exists($oldImagePath)) {
+                        Storage::disk('public')->delete($oldImagePath);
+                    }
+
+                    $directory = 'images/news';
+                    // Konsisten dengan penamaan: slug_timestamp.type
+                    // Gunakan $newSlug yang mungkin sudah diupdate
+                    $fileName = $newSlug . '_' . time() . '.' . $imageType;
+                    $imagePath = $directory . '/' . $fileName;
+
+                    Storage::disk('public')->put($imagePath, $data);
+                    $news->image = $imagePath; // Update path gambar di database
+                    $imageHasBeenUpdated = true; // Tandai bahwa gambar telah diupdate
+                } else {
+                    return back()->withErrors(['cropped_image' => 'Format gambar base64 yang diperbarui tidak valid.']);
+                }
+            }
+
+            // Jika tidak ada gambar baru yang diunggah, tapi slug berubah, kita perlu me-rename file gambar lama
+            if (!$imageHasBeenUpdated && $newSlug !== $oldSlug && $news->image) {
+                // Ekstrak nama file dari path lama
+                $oldFileName = pathinfo($oldImagePath, PATHINFO_BASENAME);
+                // Ekstrak ekstensi dari nama file lama
+                $oldExtension = pathinfo($oldFileName, PATHINFO_EXTENSION);
+
+                // Buat nama file baru dengan slug yang baru dan timestamp lama (atau timestamp baru juga bisa)
+                // Konsisten dengan format: new_slug_timestamp.ext
+                // Kita ambil timestamp dari nama file lama jika ada, atau gunakan yang baru jika tidak ada format yang sama
+                $timestampMatch = [];
+                preg_match('/_(\d+)\./', $oldFileName, $timestampMatch);
+                $timestamp = isset($timestampMatch[1]) ? $timestampMatch[1] : time();
+
+                $directory = 'images/news';
+                $newFileName = $newSlug . '_' . $timestamp . '.' . $oldExtension;
+                $newImagePath = $directory . '/' . $newFileName;
+
+                // Pastikan file lama ada dan coba rename
+                if (Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->move($oldImagePath, $newImagePath);
+                    $news->image = $newImagePath; // Update path gambar di database
+                }
+            }
+
+            $news->save();
+
+            return redirect()->route('superadmin.berita.detail', $news->slug)
+                ->with('status', 'Berita berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui berita: ' . $e->getMessage());
+        }
     }
 
     public function deleteBerita($id)
     {
         $news = News::findOrFail($id);
 
-        // Hapus file gambar
-        if ($news->image && file_exists(public_path($news->image))) {
-            unlink(public_path($news->image));
+        try {
+            if ($news->image && Storage::disk('public')->exists($news->image)) {
+                Storage::disk('public')->delete($news->image);
+            }
+
+            $news->delete();
+
+            return redirect()->route('superadmin.berita')->with('status', 'Berita berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus berita: ' . $e->getMessage());
         }
-
-        $news->delete();
-
-        return redirect()->route('superadmin.berita')->with('status', 'Berita berhasil dihapus.');
     }
 
     public function member(Request $request)
@@ -926,42 +1014,70 @@ class SuperAdminController extends Controller
 
     public function landingPageStore(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'section' => 'required|string',
-            'key' => 'required|string|in:title,content,image',
+            'key' => 'required|string|in:title,content,image,icon',
             'value' => $request->key === 'image' ? 'required|image|mimes:jpeg,jpg,png|max:2048' : 'required|string',
+            // PERBAIKAN: Mengembalikan nama input file menjadi 'icon'
             'icon' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
-        $value = $request->value;
-
-        // Simpan gambar ke folder images/landing
-        if ($request->hasFile('value') && $request->key === 'image') {
-            $valueFile = $request->file('value');
-            $extension = $valueFile->getClientOriginalExtension();
-            $valueName = $request->section . '.' . $extension;
-            $path = 'images/landing/' . $valueName;
-            $valueFile->move(public_path('images/landing'), $valueName);
-            $value = $path; // simpan full path relatif
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        // Simpan ikon ke folder icon
-        $iconPath = null;
-        if ($request->hasFile('icon')) {
-            $iconFile = $request->file('icon');
-            $iconName = $iconFile->getClientOriginalName();
-            $iconFile->move(public_path('icon'), $iconName);
-            $iconPath = 'icon/' . $iconName;
+        $valueToSave = $request->value;
+        $iconPathToSave = null;
+
+        try {
+            // Handle image for 'value' if 'key' is 'image'
+            if ($request->key === 'image' && $request->hasFile('value')) {
+                $file = $request->file('value');
+                // PERBAIKAN: Direktori untuk gambar 'value' adalah 'images/landing'
+                $directory = 'landing/images';
+
+                // Gunakan nama file unik: section_timestamp_random.ext
+                $fileName = Str::slug($request->section) . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+
+                // Simpan file ke Storage disk 'public'
+                $valueToSave = Storage::disk('public')->putFileAs($directory, $file, $fileName);
+            }
+
+            // Handle icon upload
+            // PERBAIKAN: Menggunakan nama input 'icon'
+            if ($request->hasFile('icon')) {
+                $file = $request->file('icon');
+                // PERBAIKAN: Direktori untuk icon adalah 'icon'
+                $directory = 'landing/icon';
+
+                // Gunakan nama file unik untuk icon: section_icon_timestamp_random.ext
+                $fileName = Str::slug($request->section) . '_icon_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+
+                // Simpan file ke Storage disk 'public'
+                $iconPathToSave = Storage::disk('public')->putFileAs($directory, $file, $fileName);
+            }
+
+            CmsLandingSection::create([
+                'section' => $request->section,
+                'key' => $request->key,
+                'value' => $valueToSave,
+                'icon' => $iconPathToSave,
+            ]);
+
+            return redirect()->back()->with('status', 'Section landing page berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            // Opsional: Hapus file jika ada error setelah disimpan namun sebelum disimpan ke DB
+            if ($valueToSave && $request->key === 'image' && Storage::disk('public')->exists($valueToSave)) {
+                Storage::disk('public')->delete($valueToSave);
+            }
+            if ($iconPathToSave && Storage::disk('public')->exists($iconPathToSave)) {
+                Storage::disk('public')->delete($iconPathToSave);
+            }
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan section: ' . $e->getMessage());
         }
-
-        CmsLandingSection::create([
-            'section' => $request->section,
-            'key' => $request->key,
-            'value' => $value,
-            'icon' => $iconPath,
-        ]);
-
-        return redirect()->back()->with('status', 'Section berhasil ditambahkan.');
     }
 
 
@@ -969,53 +1085,75 @@ class SuperAdminController extends Controller
     {
         $section = CmsLandingSection::findOrFail($id);
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'section' => 'required|string',
+            // Validasi 'value' tergantung pada 'key' yang sudah ada di database ($section->key)
             'value' => $section->key === 'image' ? 'nullable|image|mimes:jpeg,jpg,png|max:2048' : 'nullable|string',
             'icon' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
-        $value = $section->value;
-
-        // Ganti gambar jika key == image
-        if ($request->hasFile('value') && $section->key === 'image') {
-            // Hapus file lama jika ada
-            $oldPath = public_path($section->value);
-            if (file_exists($oldPath)) {
-                unlink($oldPath);
-            }
-
-            // Simpan file baru
-            $file = $request->file('value');
-            $extension = $file->getClientOriginalExtension();
-            $filename = $request->section . '.' . $extension;
-            $file->move(public_path('images/landing'), $filename);
-            $value = 'images/landing/' . $filename;
-        } elseif ($request->value && $section->key !== 'image') {
-            $value = $request->value;
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        // Ganti ikon jika ada
-        $icon = $section->icon;
-        if ($request->hasFile('icon')) {
-            // Hapus ikon lama
-            if ($icon && file_exists(public_path($icon))) {
-                unlink(public_path($icon));
+        $valueToUpdate = $section->value; // Default: gunakan value lama
+        $iconToUpdate = $section->icon;   // Default: gunakan icon lama
+
+        try {
+            // Handle 'value' field
+            if ($section->key === 'image') {
+                // Jika ada file gambar baru diunggah untuk 'value'
+                if ($request->hasFile('value')) {
+                    // Hapus gambar lama dari Storage jika ada
+                    if ($section->value && Storage::disk('public')->exists($section->value)) {
+                        Storage::disk('public')->delete($section->value);
+                    }
+
+                    $file = $request->file('value');
+                    $directory = 'landing/images'; // Direktori yang diminta
+                    // Generate nama file unik
+                    $fileName = Str::slug($request->section) . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+
+                    // Simpan file baru
+                    $valueToUpdate = Storage::disk('public')->putFileAs($directory, $file, $fileName);
+                }
+                // Jika tidak ada file baru diunggah, dan request->value adalah string kosong (misal user hapus gambar)
+                // atau jika ada gambar lama tapi input file kosong, maka tetap gunakan gambar lama kecuali ada instruksi untuk menghapus
+                // Jika ingin user bisa menghapus gambar, tambahkan input hidden (e.g., 'clear_image')
+            } else {
+                // Jika key bukan 'image', maka value adalah string biasa
+                $valueToUpdate = $request->input('value');
             }
 
-            $iconFile = $request->file('icon');
-            $iconName = $iconFile->getClientOriginalName();
-            $iconFile->move(public_path('icon'), $iconName);
-            $icon = 'icon/' . $iconName;
+            // Handle 'icon' field
+            if ($request->hasFile('icon')) {
+                // Hapus ikon lama dari Storage jika ada
+                if ($section->icon && Storage::disk('public')->exists($section->icon)) {
+                    Storage::disk('public')->delete($section->icon);
+                }
+
+                $file = $request->file('icon');
+                $directory = 'landing/icon'; // Direktori yang diminta
+                // Generate nama file unik
+                $fileName = Str::slug($request->section) . '_icon_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+
+                // Simpan file baru
+                $iconToUpdate = Storage::disk('public')->putFileAs($directory, $file, $fileName);
+            }
+
+            $section->update([
+                'section' => $request->section,
+                'value' => $valueToUpdate,
+                'icon' => $iconToUpdate,
+            ]);
+
+            return redirect()->back()->with('status', 'Section landing page berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui section: ' . $e->getMessage());
         }
-
-        $section->update([
-            'section' => $request->section,
-            'value' => $value,
-            'icon' => $icon,
-        ]);
-
-        return redirect()->back()->with('status', 'Section berhasil diperbarui.');
     }
 
 
@@ -1023,25 +1161,31 @@ class SuperAdminController extends Controller
     {
         $section = CmsLandingSection::findOrFail($id);
 
-        // Hapus file gambar jika key == image
-        if ($section->key === 'image' && $section->value) {
-            $imagePath = public_path('images/landing/' . $section->value);
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
+        try {
+            // Hapus file gambar jika key adalah 'image' dan value ada
+            // Asumsi $section->value sudah menyimpan path relatif dari storage/app/public
+            if ($section->key === 'image' && $section->value) {
+                if (Storage::disk('public')->exists($section->value)) {
+                    Storage::disk('public')->delete($section->value);
+                }
             }
-        }
 
-        // Hapus file icon jika ada
-        if ($section->icon) {
-            $iconPath = public_path('icon/' . $section->icon);
-            if (file_exists($iconPath)) {
-                unlink($iconPath);
+            // Hapus file icon jika ada
+            // Asumsi $section->icon sudah menyimpan path relatif dari storage/app/public
+            if ($section->icon) {
+                if (Storage::disk('public')->exists($section->icon)) {
+                    Storage::disk('public')->delete($section->icon);
+                }
             }
+
+            $section->delete();
+
+            // Menggunakan 'status' untuk SweetAlert
+            return redirect()->back()->with('status', 'Section berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus section: ' . $e->getMessage());
         }
-
-        $section->delete();
-
-        return redirect()->back()->with('status', 'Section berhasil dihapus.');
     }
 
     public function profile(Request $request)
@@ -1056,6 +1200,12 @@ class SuperAdminController extends Controller
     public function profileUpdate(Request $request)
     {
         $user = Auth::user();
+
+        // Ambil data asli sebelum diisi dengan request
+        $originalName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
+        // PERBAIKAN: Ambil role dari user yang login dan slug-kan
+        $roleSlug = Str::slug($user->role); 
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -1066,16 +1216,16 @@ class SuperAdminController extends Controller
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'profile_photo' => 'nullable|image|max:10240', // <= 10MB
+            'cropped_image' => 'nullable|string', // Pastikan ini ada jika menggunakan Cropper.js
         ]);
 
-        $oldName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
         $newName = preg_replace('/\s+/', '-', strtolower($validated['name']));
-        $role = 'super admin';
 
-        $oldPhotoPath = public_path($user->profile_photo);
-        $oldFolder = public_path("images/profile-user/{$role}/{$oldName}");
-        $newFolder = public_path("images/profile-user/{$role}/{$newName}");
+        // Tentukan direktori dasar di dalam storage/app/public
+        // Menggunakan $roleSlug yang dinamis
+        $baseDirectory = "images/profile-user/{$roleSlug}";
+        $oldUserDirectory = "{$baseDirectory}/{$originalName}";
+        $newUserDirectory = "{$baseDirectory}/{$newName}";
 
         $user->fill([
             'name' => $validated['name'],
@@ -1086,46 +1236,61 @@ class SuperAdminController extends Controller
             $user->email_verified_at = null;
         }
 
-        // CASE 1: Jika user mengirim foto hasil crop (base64)
-        if ($request->cropped_image) {
-            if ($user->profile_photo && file_exists($oldPhotoPath)) {
-                unlink($oldPhotoPath);
+        try {
+            // Handle profile photo update (menggunakan cropped_image)
+            if ($request->cropped_image) {
+                // Hapus foto profil lama dari Storage jika ada
+                if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+                    Storage::disk('public')->delete($user->profile_photo);
+                }
+
+                // Inisialisasi ImageManager
+                $imageManager = new ImageManager(new Driver());
+                $image = $imageManager->read($request->cropped_image);
+
+                // Ubah format menjadi JPEG dan kompresi (opsional)
+                $encodedImage = $image->toJpeg(80); // Kualitas 80%
+
+                // Buat nama file unik
+                $filename = uniqid('avatar_') . '.jpg';
+                $newPhotoPath = "{$newUserDirectory}/{$filename}"; // Path relatif ke storage/app/public
+
+                // Simpan gambar ke Storage
+                Storage::disk('public')->put($newPhotoPath, $encodedImage); // Langsung simpan bytes gambar
+
+                // Update path di database
+                $user->profile_photo = $newPhotoPath; // Simpan path relatif dari storage
+            }
+            // ELSE IF: Nama berubah tapi tidak ada upload foto baru
+            elseif ($originalName !== $newName && $user->profile_photo) {
+                // Periksa apakah folder lama dan file lama ada di Storage
+                if (Storage::disk('public')->exists($user->profile_photo)) {
+                    // Dapatkan nama file saja dari path lama
+                    $oldFilename = basename($user->profile_photo);
+                    $newPhotoPath = "{$newUserDirectory}/{$oldFilename}";
+
+                    // Pindahkan file dari lokasi lama ke lokasi baru di Storage
+                    Storage::disk('public')->move($user->profile_photo, $newPhotoPath);
+
+                    // Update path di database
+                    $user->profile_photo = $newPhotoPath;
+                }
             }
 
-            $imageManager = new ImageManager(new Driver());
-            $image = $imageManager->read($request->cropped_image)->toJpeg();
+            $user->save();
 
-            $filename = uniqid('avatar_') . '.jpg';
-
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
+            // Opsional: Hapus folder lama jika nama berubah dan folder lama menjadi kosong
+            if ($originalName !== $newName && Storage::disk('public')->exists($oldUserDirectory)) {
+                $filesInOldDirectory = Storage::disk('public')->files($oldUserDirectory);
+                if (empty($filesInOldDirectory)) {
+                    Storage::disk('public')->deleteDirectory($oldUserDirectory);
+                }
             }
 
-            $image->save($newFolder . '/' . $filename);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
+            return redirect()->route('superadmin.profile.edit')->with('status', 'Profil berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui profil: ' . $e->getMessage());
         }
-
-        // CASE 2: Nama berubah tapi tidak upload foto
-        elseif ($oldName !== $newName && $user->profile_photo && file_exists($oldPhotoPath)) {
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
-            }
-
-            $filename = basename($oldPhotoPath);
-            $newPhotoPath = $newFolder . '/' . $filename;
-
-            rename($oldPhotoPath, $newPhotoPath);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
-        }
-
-        $user->save();
-
-        // Hapus folder lama jika nama berubah dan folder lama ada
-        if ($oldName !== $newName && is_dir($oldFolder)) {
-            @rmdir($oldFolder); // pakai @ untuk suppress error jika folder tidak kosong
-        }
-
-        return redirect()->route('superadmin.profile.edit')->with('status', 'Profil berhasil diperbarui.');
     }
 
     public function showChangePassword()

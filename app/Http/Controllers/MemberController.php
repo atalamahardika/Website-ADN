@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -408,19 +410,25 @@ class MemberController extends Controller
     public function profileUpdate(Request $request)
     {
         $user = Auth::user();
-        $member = $user->member;
+        $member = $user->member; // Pastikan relasi ini ada dan berfungsi
+
+        // Ambil data asli nama user sebelum diisi dengan request
+        $originalName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
+        // Ambil role dari user yang login dan slug-kan
+        $roleSlug = Str::slug($user->role); // Ini akan menghasilkan 'member'
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
-                'nullable',
+                'nullable', // Email bisa nullable sesuai yang Anda tentukan
                 'string',
                 'lowercase',
                 'email',
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'profile_photo' => 'nullable|image|max:10240', // <= 10MB
+            'cropped_image' => 'nullable|string', // Gunakan ini untuk validasi gambar base64
+            // Validasi untuk data member
             'gelar_depan' => 'nullable|string|max:255',
             'gelar_belakang_1' => 'nullable|string|max:255',
             'gelar_belakang_2' => 'nullable|string|max:255',
@@ -430,7 +438,7 @@ class MemberController extends Controller
                 'string',
                 'max:16',
                 'min:16',
-                Rule::unique('members', 'nik')->ignore($member?->id),
+                Rule::unique('members', 'nik')->ignore($member?->id), // Gunakan $member?->id
             ],
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'nullable|date',
@@ -448,13 +456,12 @@ class MemberController extends Controller
             'prodi' => 'required|string|max:255',
         ]);
 
-        $oldName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
         $newName = preg_replace('/\s+/', '-', strtolower($validated['name']));
-        $role = 'member';
 
-        $oldPhotoPath = public_path($user->profile_photo);
-        $oldFolder = public_path("images/profile-user/{$role}/{$oldName}");
-        $newFolder = public_path("images/profile-user/{$role}/{$newName}");
+        // Tentukan direktori dasar di dalam storage/app/public
+        $baseDirectory = "images/profile-user/{$roleSlug}";
+        $oldUserDirectory = "{$baseDirectory}/{$originalName}";
+        $newUserDirectory = "{$baseDirectory}/{$newName}";
 
         $user->fill([
             'name' => $validated['name'],
@@ -465,77 +472,97 @@ class MemberController extends Controller
             $user->email_verified_at = null;
         }
 
-        // CASE 1: Jika user mengirim foto hasil crop (base64)
-        if ($request->cropped_image) {
-            if ($user->profile_photo && file_exists($oldPhotoPath)) {
-                unlink($oldPhotoPath);
+        try {
+            $imageHasBeenUpdated = false; // Flag untuk melacak apakah gambar diupload
+            // Handle profile photo update (menggunakan cropped_image)
+            if (isset($request->cropped_image) && $request->cropped_image) {
+                // Hapus foto profil lama dari Storage jika ada
+                if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+                    // Pengecualian: jangan hapus template photo
+                    if (!Str::contains($user->profile_photo, 'template_photo_profile.png')) {
+                         Storage::disk('public')->delete($user->profile_photo);
+                    }
+                }
+
+                // Inisialisasi ImageManager
+                $imageManager = new ImageManager(new Driver());
+                $image = $imageManager->read($request->cropped_image);
+
+                // Ubah format menjadi JPEG dan kompresi (opsional)
+                $encodedImage = $image->toJpeg(80); // Kualitas 80%
+
+                // Buat nama file unik
+                $filename = uniqid('avatar_') . '.jpg';
+                $newPhotoPath = "{$newUserDirectory}/{$filename}"; // Path relatif ke storage/app/public
+
+                // Simpan gambar ke Storage
+                Storage::disk('public')->put($newPhotoPath, $encodedImage); // Langsung simpan bytes gambar
+
+                // Update path di database
+                $user->profile_photo = $newPhotoPath; // Simpan path relatif dari storage
+                $imageHasBeenUpdated = true;
+            }
+            // ELSE IF: Nama berubah tapi tidak ada upload foto baru dan bukan template photo
+            elseif ($originalName !== $newName && $user->profile_photo && !Str::contains($user->profile_photo, 'template_photo_profile.png')) {
+                // Periksa apakah folder lama dan file lama ada di Storage
+                if (Storage::disk('public')->exists($user->profile_photo)) {
+                    // Dapatkan nama file saja dari path lama
+                    $oldFilename = basename($user->profile_photo);
+                    $newPhotoPath = "{$newUserDirectory}/{$oldFilename}";
+
+                    // Pindahkan file dari lokasi lama ke lokasi baru di Storage
+                    Storage::disk('public')->move($user->profile_photo, $newPhotoPath);
+
+                    // Update path di database
+                    $user->profile_photo = $newPhotoPath;
+                }
             }
 
-            $imageManager = new ImageManager(new Driver());
-            $image = $imageManager->read($request->cropped_image)->toJpeg();
+            $user->save(); // Simpan perubahan pada user (nama, email, profile_photo)
 
-            $filename = uniqid('avatar_') . '.jpg';
-
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
+            // Opsional: Hapus folder lama jika nama berubah dan folder lama menjadi kosong
+            if ($originalName !== $newName && Storage::disk('public')->exists($oldUserDirectory)) {
+                $filesInOldDirectory = Storage::disk('public')->files($oldUserDirectory);
+                if (empty($filesInOldDirectory)) {
+                    Storage::disk('public')->deleteDirectory($oldUserDirectory);
+                }
             }
 
-            $image->save($newFolder . '/' . $filename);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
+            // Ambil nama wilayah berdasarkan ID
+            $provinsi = DB::table('provinces')->where('prov_id', $request->provinsi)->value('prov_name');
+            $kabupaten = DB::table('cities')->where('city_id', $request->kabupaten)->value('city_name');
+            $kecamatan = DB::table('districts')->where('dis_id', $request->kecamatan)->value('dis_name');
+            $kelurahan = DB::table('subdistricts')->where('subdis_id', $request->kelurahan)->value('subdis_name');
+
+            $user->member()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'gelar_depan' => $validated['gelar_depan'] ?? null,
+                    'gelar_belakang_1' => $validated['gelar_belakang_1'] ?? null,
+                    'gelar_belakang_2' => $validated['gelar_belakang_2'] ?? null,
+                    'gelar_belakang_3' => $validated['gelar_belakang_3'] ?? null,
+                    'nik' => $validated['nik'],
+                    'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+                    'no_hp' => $validated['no_hp'] ?? null,
+                    'no_wa' => $validated['no_wa'] ?? null,
+                    'alamat_jalan' => $validated['alamat_jalan'] ?? null,
+                    'provinsi' => $provinsi,
+                    'kabupaten' => $kabupaten,
+                    'kecamatan' => $kecamatan,
+                    'kelurahan' => $kelurahan,
+                    'kode_pos' => $request->kode_pos,
+                    'email_institusi' => $validated['email_institusi'] ?? null,
+                    'universitas' => $validated['universitas'],
+                    'fakultas' => $validated['fakultas'],
+                    'prodi' => $validated['prodi'],
+                ]
+            );
+
+            return redirect()->route('profile.edit')->with('status', 'Profil berhasil diperbarui.'); // Menggunakan 'success'
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui profil: ' . $e->getMessage());
         }
-
-        // CASE 2: Nama berubah tapi tidak upload foto
-        elseif ($oldName !== $newName && $user->profile_photo && file_exists($oldPhotoPath)) {
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
-            }
-
-            $filename = basename($oldPhotoPath);
-            $newPhotoPath = $newFolder . '/' . $filename;
-
-            rename($oldPhotoPath, $newPhotoPath);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
-        }
-
-        $user->save();
-
-        // Hapus folder lama jika nama berubah dan folder lama ada
-        if ($oldName !== $newName && is_dir($oldFolder)) {
-            @rmdir($oldFolder); // pakai @ untuk suppress error jika folder tidak kosong
-        }
-
-        // Ambil nama wilayah berdasarkan ID
-        $provinsi = DB::table('provinces')->where('prov_id', $request->provinsi)->value('prov_name');
-        $kabupaten = DB::table('cities')->where('city_id', $request->kabupaten)->value('city_name');
-        $kecamatan = DB::table('districts')->where('dis_id', $request->kecamatan)->value('dis_name');
-        $kelurahan = DB::table('subdistricts')->where('subdis_id', $request->kelurahan)->value('subdis_name');
-
-        $user->member()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'gelar_depan' => $validated['gelar_depan'] ?? null,
-                'gelar_belakang_1' => $validated['gelar_belakang_1'] ?? null,
-                'gelar_belakang_2' => $validated['gelar_belakang_2'] ?? null,
-                'gelar_belakang_3' => $validated['gelar_belakang_3'] ?? null,
-                'nik' => $validated['nik'],
-                'tempat_lahir' => $validated['tempat_lahir'] ?? null,
-                'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
-                'no_hp' => $validated['no_hp'] ?? null,
-                'no_wa' => $validated['no_wa'] ?? null,
-                'alamat_jalan' => $validated['alamat_jalan'] ?? null,
-                'provinsi' => $provinsi,
-                'kabupaten' => $kabupaten,
-                'kecamatan' => $kecamatan,
-                'kelurahan' => $kelurahan,
-                'kode_pos' => $request->kode_pos,
-                'email_institusi' => $validated['email_institusi'] ?? null,
-                'universitas' => $validated['universitas'],
-                'fakultas' => $validated['fakultas'],
-                'prodi' => $validated['prodi'],
-            ]
-        );
-
-        return redirect()->route('profile.edit')->with('status', 'Profil berhasil diperbarui.');
     }
 
     public function showChangePassword()

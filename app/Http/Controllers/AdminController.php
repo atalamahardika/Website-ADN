@@ -8,9 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -22,8 +24,8 @@ class AdminController extends Controller
         // Hitung total sub divisi milik divisinya
         $totalSubDivisi = $division ? $division->subDivisions()->count() : 0;
 
-        // Contoh: anggota masih statis dulu
-        $totalAnggota = 123; // statis
+        // Hitung anggota divisi dari membership
+        $totalAnggota = $division ? Membership::where('division_id', $division->id)->count() : 0;
 
         // Ambil semua sub divisi dari divisinya
         $subDivisions = $division ? $division->subDivisions : [];
@@ -50,6 +52,12 @@ class AdminController extends Controller
     public function profileUpdate(Request $request)
     {
         $user = Auth::user();
+
+        // Ambil data asli sebelum diisi dengan request
+        $originalName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
+        // PERBAIKAN: Ambil role dari user yang login dan slug-kan
+        $roleSlug = Str::slug($user->role); 
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -60,16 +68,16 @@ class AdminController extends Controller
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'profile_photo' => 'nullable|image|max:10240', // <= 10MB
+            'cropped_image' => 'nullable|string', // Pastikan ini ada jika menggunakan Cropper.js
         ]);
 
-        $oldName = preg_replace('/\s+/', '-', strtolower($user->getOriginal('name')));
         $newName = preg_replace('/\s+/', '-', strtolower($validated['name']));
-        $role = 'admin';
 
-        $oldPhotoPath = public_path($user->profile_photo);
-        $oldFolder = public_path("images/profile-user/{$role}/{$oldName}");
-        $newFolder = public_path("images/profile-user/{$role}/{$newName}");
+        // Tentukan direktori dasar di dalam storage/app/public
+        // Menggunakan $roleSlug yang dinamis
+        $baseDirectory = "images/profile-user/{$roleSlug}";
+        $oldUserDirectory = "{$baseDirectory}/{$originalName}";
+        $newUserDirectory = "{$baseDirectory}/{$newName}";
 
         $user->fill([
             'name' => $validated['name'],
@@ -80,46 +88,61 @@ class AdminController extends Controller
             $user->email_verified_at = null;
         }
 
-        // CASE 1: Jika user mengirim foto hasil crop (base64)
-        if ($request->cropped_image) {
-            if ($user->profile_photo && file_exists($oldPhotoPath)) {
-                unlink($oldPhotoPath);
+        try {
+            // Handle profile photo update (menggunakan cropped_image)
+            if ($request->cropped_image) {
+                // Hapus foto profil lama dari Storage jika ada
+                if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+                    Storage::disk('public')->delete($user->profile_photo);
+                }
+
+                // Inisialisasi ImageManager
+                $imageManager = new ImageManager(new Driver());
+                $image = $imageManager->read($request->cropped_image);
+
+                // Ubah format menjadi JPEG dan kompresi (opsional)
+                $encodedImage = $image->toJpeg(80); // Kualitas 80%
+
+                // Buat nama file unik
+                $filename = uniqid('avatar_') . '.jpg';
+                $newPhotoPath = "{$newUserDirectory}/{$filename}"; // Path relatif ke storage/app/public
+
+                // Simpan gambar ke Storage
+                Storage::disk('public')->put($newPhotoPath, $encodedImage); // Langsung simpan bytes gambar
+
+                // Update path di database
+                $user->profile_photo = $newPhotoPath; // Simpan path relatif dari storage
+            }
+            // ELSE IF: Nama berubah tapi tidak ada upload foto baru
+            elseif ($originalName !== $newName && $user->profile_photo) {
+                // Periksa apakah folder lama dan file lama ada di Storage
+                if (Storage::disk('public')->exists($user->profile_photo)) {
+                    // Dapatkan nama file saja dari path lama
+                    $oldFilename = basename($user->profile_photo);
+                    $newPhotoPath = "{$newUserDirectory}/{$oldFilename}";
+
+                    // Pindahkan file dari lokasi lama ke lokasi baru di Storage
+                    Storage::disk('public')->move($user->profile_photo, $newPhotoPath);
+
+                    // Update path di database
+                    $user->profile_photo = $newPhotoPath;
+                }
             }
 
-            $imageManager = new ImageManager(new Driver());
-            $image = $imageManager->read($request->cropped_image)->toJpeg();
+            $user->save();
 
-            $filename = uniqid('avatar_') . '.jpg';
-
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
+            // Opsional: Hapus folder lama jika nama berubah dan folder lama menjadi kosong
+            if ($originalName !== $newName && Storage::disk('public')->exists($oldUserDirectory)) {
+                $filesInOldDirectory = Storage::disk('public')->files($oldUserDirectory);
+                if (empty($filesInOldDirectory)) {
+                    Storage::disk('public')->deleteDirectory($oldUserDirectory);
+                }
             }
 
-            $image->save($newFolder . '/' . $filename);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
+            return redirect()->route('admin.profile.edit')->with('status', 'Profil berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui profil: ' . $e->getMessage());
         }
-
-        // CASE 2: Nama berubah tapi tidak upload foto
-        elseif ($oldName !== $newName && $user->profile_photo && file_exists($oldPhotoPath)) {
-            if (!file_exists($newFolder)) {
-                mkdir($newFolder, 0755, true);
-            }
-
-            $filename = basename($oldPhotoPath);
-            $newPhotoPath = $newFolder . '/' . $filename;
-
-            rename($oldPhotoPath, $newPhotoPath);
-            $user->profile_photo = "images/profile-user/{$role}/{$newName}/{$filename}";
-        }
-
-        $user->save();
-
-        // Hapus folder lama jika nama berubah dan folder lama ada
-        if ($oldName !== $newName && is_dir($oldFolder)) {
-            @rmdir($oldFolder); // pakai @ untuk suppress error jika folder tidak kosong
-        }
-
-        return redirect()->route('admin.profile.edit')->with('status', 'Profil berhasil diperbarui.');
     }
 
     public function beranda(Request $request)
