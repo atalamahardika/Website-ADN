@@ -35,7 +35,17 @@
                         <p class="text-sm text-gray-700 mb-0">
                             {{ $membership->id_member_organization ? 'ID Anggota ' . $membership->id_member_organization : 'No. Anggota Tidak Tersedia' }}
                         </p>
-                        <p class="badge bg-success text-white mb-0">
+                        @php
+                            $status = $membership->status ?? null;
+                            $badgeClass = match ($status) {
+                                'pending' => 'bg-warning',
+                                'active' => 'bg-success',
+                                'inactive' => 'bg-secondary',
+                                'rejected' => 'bg-danger',
+                                default => 'bg-secondary',
+                            };
+                        @endphp
+                        <p class="badge {{ $badgeClass }} text-white mb-0">
                             {{ $membership->getStatusLabelAttribute() ?? 'Status Tidak Diketahui' }}
                         </p>
                     </div>
