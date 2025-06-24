@@ -28,9 +28,12 @@
                         @csrf
                         @method('PATCH')
 
-                        <textarea name="biografi" rows="6" class="w-full rounded border-gray-300 shadow-sm">{{ old('biografi', $user->member->biografi ?? '') }}</textarea>
-
-                        <x-input-error :messages="$errors->get('biografi')" class="mt-2" />
+                        <textarea name="biografi" rows="6" class="form-control editor">{{ old('biografi', $user->member->biografi ?? '') }}</textarea>
+                        @error('biografi')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
 
                         <div class="mt-3 text-end">
                             <button type="submit" class="btn btn-primary">Simpan Biografi</button>
@@ -51,16 +54,21 @@
                         </button>
                     </div>
 
-                    {{-- Error Message --}}
-                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
-
                     {{-- Modal Tambah --}}
                     <x-modal id="tambahKeilmuanModal" title="Tambah Bidang Keilmuan">
-                        <form method="POST" action="{{ route('keilmuan.store') }}" class="space-y-4">
+                        <form method="POST" action="{{ route('keilmuan.store') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="name" placeholder="Nama bidang keilmuan"
-                                class="form-input w-full rounded border-gray-300 shadow-sm" value="{{ old('name') }}"
-                                required>
+                            <div class="mb-4">
+                                <label for="name" class="block font-semibold">Bidang Keilmuan</label>
+                                <input type="text" name="name" placeholder="Nama bidang keilmuan"
+                                    class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}"
+                                    required>
+                                @error('name')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit" class="btn btn-primary">Tambah</button>
                             </div>
@@ -95,9 +103,17 @@
                                         class="space-y-4">
                                         @csrf
                                         @method('PATCH')
-                                        <input type="text" name="name"
-                                            class="form-input w-full rounded border-gray-300 shadow-sm"
-                                            value="{{ old('name', $field->name) }}" required>
+                                        <div class="mb-4">
+                                            <label for="name" class="block font-semibold">Bidang Keilmuan</label>
+                                            <input type="text" name="name"
+                                                class="form-control @error('name') is-invalid @enderror"
+                                                value="{{ old('name', $field->name) }}" required>
+                                            @error('name')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
                                         <div class="flex justify-end gap-2">
                                             <button type="submit" class="btn btn-primary">Simpan</button>
                                             <button type="button"
@@ -123,15 +139,21 @@
                             class="btn btn-primary">Tambah</button>
                     </div>
 
-                    {{-- Error Message --}}
-                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
-
                     {{-- Modal Tambah --}}
                     <x-modal id="modalAddSkill" title="Tambah Keahlian">
                         <form method="POST" action="{{ route('keahlian.store') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="name" placeholder="Nama keahlian"
-                                class="form-input rounded w-full" required>
+                            <div class="mb-4">
+                                <label for="name" class="block font-semibold">Keahlian</label>
+                                <input type="text" name="name" placeholder="Nama keahlian"
+                                    value="{{ old('name') }}"
+                                    class="form-control @error('name') is-invalid @enderror" required>
+                                @error('name')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </div>
@@ -161,8 +183,17 @@
                                     <form method="POST" action="{{ route('keahlian.update', $skill->id) }}"
                                         class="space-y-4">
                                         @csrf @method('PATCH')
-                                        <input type="text" name="name" class="form-input w-full rounded"
-                                            value="{{ old('name', $skill->name) }}" required>
+                                        <div class="mb-4">
+                                            <label for="name" class="block font-semibold">Keahlian</label>
+                                            <input type="text" name="name"
+                                                class="form-control @error('name') is-invalid @enderror"
+                                                value="{{ old('name', $skill->name) }}" required>
+                                            @error('name')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
                                         <div class="flex justify-end gap-2">
                                             <button type="submit" class="btn btn-primary">Simpan</button>
                                             <button type="button"
@@ -188,28 +219,79 @@
                             class="btn btn-primary">Tambah</button>
                     </div>
 
-                    {{-- Error Message --}}
-                    <x-input-error :messages="$errors->get('name')" class="mt-2" />
-
                     {{-- Modal Tambah --}}
                     <x-modal id="modalAddEdu" title="Tambah Riwayat Pendidikan">
                         <form method="POST" action="{{ route('pendidikan.store') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="jenjang" placeholder="Jenjang"
-                                class="form-input rounded w-full" required>
-                            <input type="text" name="institusi" placeholder="Institusi"
-                                class="form-input rounded w-full" required>
-                            <input type="text" name="program_studi" placeholder="Program Studi"
-                                class="form-input rounded w-full" required>
-                            <input type="number" name="tahun_masuk" placeholder="Tahun Masuk"
-                                class="form-input rounded w-full" required>
-                            <input type="number" name="tahun_lulus" placeholder="Tahun Lulus"
-                                class="form-input rounded w-full" required>
+                            <div class="mb-4">
+                                <label for="jenjang" class="block font-semibold">Jenjang</label>
+                                <input type="text" name="jenjang" placeholder="Jenjang"
+                                    value="{{ old('jenjang') }}"
+                                    class="form-control @error('jenjang') is-invalid @enderror" required>
+                                @error('jenjang')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="institusi" class="block font-semibold">Institusi</label>
+                                <input type="text" name="institusi" placeholder="Institusi"
+                                    value="{{ old('institusi') }}"
+                                    class="form-control @error('institusi') is-invalid @enderror" required>
+                                @error('institusi')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="program_studi" class="block font-semibold">Program Studi</label>
+                                <input type="text" name="program_studi" placeholder="Program Studi"
+                                    value="{{ old('program_studi') }}"
+                                    class="form-control @error('program_studi') is-invalid @enderror" required>
+                                @error('program_studi')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="tahun_masuk" class="block font-semibold">Tahun Masuk</label>
+                                <input type="number" name="tahun_masuk" placeholder="Tahun Masuk"
+                                    value="{{ old('tahun_masuk') }}"
+                                    class="form-control @error('tahun_masuk') is-invalid @enderror" required>
+                                @error('tahun_masuk')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="tahun_lulus" class="block font-semibold">Tahun Lulus</label>
+                                <input type="number" name="tahun_lulus" placeholder="Tahun Lulus"
+                                    value="{{ old('tahun_lulus') }}"
+                                    class="form-control @error('tahun_lulus') is-invalid @enderror" required>
+                                @error('tahun_lulus')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </div>
                         </form>
                     </x-modal>
+
+                    {{-- Error Handling Untuk Tetap Membuka Modal Tambah Riwayat Pendidikan --}}
+                    @if (session('modal') === 'modalAddEdu')
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.getElementById('modalAddEdu').classList.remove('hidden');
+                            });
+                        </script>
+                    @endif
 
                     {{-- List Riwayat Pendidikan --}}
                     @if ($user->member->educationalHistories->count())
@@ -240,21 +322,73 @@
                                     <form method="POST" action="{{ route('pendidikan.update', $edu->id) }}"
                                         class="grid grid-cols-1 gap-2">
                                         @csrf @method('PATCH')
-                                        <input type="text" name="jenjang"
-                                            value="{{ old('jenjang', $edu->jenjang) }}" class="form-input rounded"
-                                            required>
-                                        <input type="text" name="institusi"
-                                            value="{{ old('institusi', $edu->institusi) }}"
-                                            class="form-input rounded" required>
-                                        <input type="text" name="program_studi"
-                                            value="{{ old('program_studi', $edu->program_studi) }}"
-                                            class="form-input rounded" required>
-                                        <input type="number" name="tahun_masuk"
-                                            value="{{ old('tahun_masuk', $edu->tahun_masuk) }}"
-                                            class="form-input rounded" required>
-                                        <input type="number" name="tahun_lulus"
-                                            value="{{ old('tahun_lulus', $edu->tahun_lulus) }}"
-                                            class="form-input rounded" required>
+                                        <div class="mb-4">
+                                            <label for="edit_jenjang_{{ $edu->id }}"
+                                                class="block font-semibold">Jenjang</label>
+                                            <input type="text" id="edit_jenjang_{{ $edu->id }}"
+                                                name="jenjang" value="{{ old('jenjang', $edu->jenjang) }}"
+                                                class="form-control @error('jenjang') is-invalid @enderror" required>
+                                            @error('jenjang')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_institusi_{{ $edu->id }}"
+                                                class="block font-semibold">Institusi</label>
+                                            <input type="text" id="edit_institusi_{{ $edu->id }}"
+                                                name="institusi" value="{{ old('institusi', $edu->institusi) }}"
+                                                class="form-control @error('institusi') is-invalid @enderror"
+                                                required>
+                                            @error('institusi')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_program_studi_{{ $edu->id }}"
+                                                class="block font-semibold">Program Studi</label>
+                                            <input type="text" id="edit_program_studi_{{ $edu->id }}"
+                                                name="program_studi"
+                                                value="{{ old('program_studi', $edu->program_studi) }}"
+                                                class="form-control @error('program_studi') is-invalid @enderror"
+                                                required>
+                                            @error('program_studi')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_tahun_masuk_{{ $edu->id }}"
+                                                class="block font-semibold">Tahun Masuk</label>
+                                            <input type="number" id="edit_tahun_masuk_{{ $edu->id }}"
+                                                name="tahun_masuk"
+                                                value="{{ old('tahun_masuk', $edu->tahun_masuk) }}"
+                                                class="form-control @error('tahun_masuk') is-invalid @enderror"
+                                                required>
+                                            @error('tahun_masuk')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="edit_tahun_lulus_{{ $edu->id }}"
+                                                class="block font-semibold">Tahun Lulus</label>
+                                            <input type="number" id="edit_tahun_lulus_{{ $edu->id }}"
+                                                name="tahun_lulus"
+                                                value="{{ old('tahun_lulus', $edu->tahun_lulus) }}"
+                                                class="form-control @error('tahun_lulus') is-invalid @enderror"
+                                                required>
+                                            @error('tahun_lulus')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
                                         <div class="flex justify-end gap-2">
                                             <button type="submit" class="btn btn-primary">Simpan</button>
                                             <button type="button"
@@ -263,6 +397,15 @@
                                         </div>
                                     </form>
                                 </x-modal>
+
+                                {{-- Error Handling Untuk Tetap Membuka Modal Edit Riwayat Pendidikan --}}
+                                @if (session('modal') === 'edit-edu' && session('education_id'))
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            document.getElementById('edit-edu-{{ session('education_id') }}').classList.remove('hidden');
+                                        });
+                                    </script>
+                                @endif
                             @endforeach
                         </ul>
                     @else
@@ -285,17 +428,53 @@
                     <x-modal id="modalAddAward" title="Tambah Penghargaan">
                         <form method="POST" action="{{ route('penghargaan.store') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="nama" placeholder="Nama Penghargaan"
-                                class="form-input rounded w-full" required>
-                            <input type="text" name="penyelenggara" placeholder="Penyelenggara"
-                                class="form-input rounded w-full">
-                            <input type="number" name="tahun" placeholder="Tahun"
-                                class="form-input rounded w-full">
+                            <div class="mb-4">
+                                <label for="nama" class="block font-semibold">Nama Penghargaan</label>
+                                <input type="text" name="nama" placeholder="Nama Penghargaan"
+                                    value="{{ old('nama') }}"
+                                    class="form-control @error('nama') is-invalid @enderror" required>
+                                @error('nama')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="penyelenggara" class="block font-semibold">Penyelenggara</label>
+                                <input type="text" name="penyelenggara" placeholder="Penyelenggara"
+                                    value="{{ old('penyelenggara') }}"
+                                    class="form-control @error('penyelenggara') is-invalid @enderror" required>
+                                @error('penyelenggara')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="tahun" class="block font-semibold">Tahun</label>
+                                <input type="number" name="tahun" placeholder="Tahun"
+                                    value="{{ old('tahun') }}"
+                                    class="form-control @error('tahun') is-invalid @enderror" required>
+                                @error('tahun')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </div>
                         </form>
                     </x-modal>
+
+                    {{-- Error Handling Untuk Tetap Membuka Modal Tambah Penghargaan --}}
+                    @if (session('modal') === 'modalAddAward')
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.getElementById('modalAddAward').classList.remove('hidden');
+                            });
+                        </script>
+                    @endif
 
                     {{-- List Penghargaan --}}
                     @if ($user->member->awards->count())
@@ -328,13 +507,40 @@
                                     <form method="POST" action="{{ route('penghargaan.update', $award->id) }}"
                                         class="grid grid-cols-1 gap-2">
                                         @csrf @method('PATCH')
-                                        <input type="text" name="nama" value="{{ old('nama', $award->nama) }}"
-                                            class="form-input rounded" required>
-                                        <input type="text" name="penyelenggara"
-                                            value="{{ old('penyelenggara', $award->penyelenggara) }}"
-                                            class="form-input rounded">
-                                        <input type="number" name="tahun"
-                                            value="{{ old('tahun', $award->tahun) }}" class="form-input rounded">
+                                        <div class="mb-4">
+                                            <label for="nama" class="block font-semibold">Nama Penghargaan</label>
+                                            <input type="text" name="nama"
+                                                value="{{ old('nama', $award->nama) }}"
+                                                class="form-control @error('nama') is-invalid @enderror" required>
+                                            @error('nama')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="penyelenggara"
+                                                class="block font-semibold">Penyelenggara</label>
+                                            <input type="text" name="penyelenggara"
+                                                value="{{ old('penyelenggara', $award->penyelenggara) }}"
+                                                class="form-control @error('penyelenggara') is-invalid @enderror">
+                                            @error('penyelenggara')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="tahun" class="block font-semibold">Tahun</label>
+                                            <input type="number" name="tahun"
+                                                value="{{ old('tahun', $award->tahun) }}"
+                                                class="form-control @error('tahun') is-invalid @enderror">
+                                            @error('tahun')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
                                         <div class="flex justify-end gap-2">
                                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                                             <button type="button"
@@ -343,6 +549,15 @@
                                         </div>
                                     </form>
                                 </x-modal>
+
+                                {{-- Error Handling Untuk Tetap Membuka Modal Edit Penghargaan --}}
+                                @if (session('modal') === 'edit-award' && session('award_id'))
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            document.getElementById('edit-award-{{ session('award_id') }}').classList.remove('hidden');
+                                        });
+                                    </script>
+                                @endif
                             @endforeach
                         </ul>
                     @else
@@ -364,17 +579,53 @@
                     <x-modal id="modalAddMengajar" title="Tambah Riwayat Mengajar">
                         <form method="POST" action="{{ route('mengajar.store') }}" class="space-y-3">
                             @csrf
-                            <input type="text" name="mata_kuliah" placeholder="Mata Kuliah"
-                                class="form-input rounded w-full" required>
-                            <input type="text" name="institusi" placeholder="Institusi"
-                                class="form-input rounded w-full" required>
-                            <input type="text" name="tahun_ajar" placeholder="Tahun Ajar (contoh: 2023)"
-                                class="form-input rounded w-full" required>
+                            <div class="mb-4">
+                                <label for="mata_kuliah" class="block font-semibold">Mata Kuliah</label>
+                                <input type="text" name="mata_kuliah" placeholder="Mata Kuliah"
+                                    value="{{ old('mata_kuliah') }}"
+                                    class="form-control @error('mata_kuliah') is-invalid @enderror" required>
+                                @error('mata_kuliah')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="institusi" class="block font-semibold">Institusi</label>
+                                <input type="text" name="institusi" placeholder="Institusi"
+                                    value="{{ old('institusi') }}"
+                                    class="form-control @error('institusi') is-invalid @enderror" required>
+                                @error('institusi')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label for="tahun_ajar" class="block font-semibold">Tahun Ajar</label>
+                                <input type="text" name="tahun_ajar" placeholder="Tahun Ajar (contoh: 2023)"
+                                    value="{{ old('tahun_ajar') }}"
+                                    class="form-control @error('tahun_ajar') is-invalid @enderror" required>
+                                @error('tahun_ajar')
+                                    <div class="text-danger mt-1">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </div>
                         </form>
                     </x-modal>
+
+                    {{-- Error Handling Untuk Tetap Membuka Modal Tambah Riwayat Mengajar --}}
+                    @if (session('modal') === 'modalAddMengajar')
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.getElementById('modalAddMengajar').classList.remove('hidden');
+                            });
+                        </script>
+                    @endif
 
                     {{-- List Riwayat Mengajar --}}
                     @if ($user->member->teachingHistories->count())
@@ -402,15 +653,42 @@
                                     <form method="POST" action="{{ route('mengajar.update', $teach->id) }}"
                                         class="grid grid-cols-1 gap-2">
                                         @csrf @method('PATCH')
-                                        <input type="text" name="mata_kuliah"
-                                            value="{{ old('mata_kuliah', $teach->mata_kuliah) }}"
-                                            class="form-input rounded" required>
-                                        <input type="text" name="institusi"
-                                            value="{{ old('institusi', $teach->institusi) }}"
-                                            class="form-input rounded" required>
-                                        <input type="text" name="tahun_ajar"
-                                            value="{{ old('tahun_ajar', $teach->tahun_ajar) }}"
-                                            class="form-input rounded" required>
+                                        <div class="mb-4">
+                                            <label for="mata_kuliah" class="block font-semibold">Mata Kuliah</label>
+                                            <input type="text" name="mata_kuliah"
+                                                value="{{ old('mata_kuliah', $teach->mata_kuliah) }}"
+                                                class="form-control @error('mata_kuliah') is-invalid @enderror"
+                                                required>
+                                            @error('mata_kuliah')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="institusi" class="block font-semibold">Institusi</label>
+                                            <input type="text" name="institusi"
+                                                value="{{ old('institusi', $teach->institusi) }}"
+                                                class="form-control @error('institusi') is-invalid @enderror"
+                                                required>
+                                            @error('institusi')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="tahun_ajar" class="block font-semibold">Tahun Ajar</label>
+                                            <input type="text" name="tahun_ajar"
+                                                value="{{ old('tahun_ajar', $teach->tahun_ajar) }}"
+                                                class="form-control @error('tahun_ajar') is-invalid @enderror"
+                                                required>
+                                            @error('tahun_ajar')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+                                        </div>
                                         <div class="flex justify-end gap-2">
                                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                                             <button type="button"
@@ -419,6 +697,15 @@
                                         </div>
                                     </form>
                                 </x-modal>
+
+                                {{-- Error Handling Untuk Tetap Membuka Modal Edit Riwayat Mengajar --}}
+                                @if (session('modal') === 'edit-mengajar' && session('teach_id'))
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            document.getElementById('edit-mengajar-{{ session('teach_id') }}').classList.remove('hidden');
+                                        });
+                                    </script>
+                                @endif
                             @endforeach
                         </ul>
                     @else
@@ -443,13 +730,13 @@
     @endif
 
     {{-- SweetAlert2 untuk error --}}
-    @if ($errors->has('tahun_ajar'))
+    @if ($errors->any())
         <script>
             Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat menyimpan data. Silakan periksa kembali isian Anda.',
                 icon: 'error',
-                title: 'Format Tahun Salah!',
-                text: '{{ $errors->first('tahun_ajar') }}',
-                confirmButtonColor: '#d33',
+                confirmButtonText: 'Oke'
             });
         </script>
     @endif

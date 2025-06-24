@@ -78,38 +78,80 @@
                                         <div class="mb-4">
                                             <label for="edit_authors" class="block font-semibold">Nama Penulis</label>
                                             <input type="text" name="authors"
-                                                value="{{ implode(', ', $pub->authors) }}"
-                                                placeholder="Nama pengarang (pisah koma)" class="form-control" required>
+                                                value="{{ old('authors', implode(', ', $pub->authors)) }}"
+                                                placeholder="Nama pengarang (pisah koma)"
+                                                class="form-control @error('authors') is-invalid @enderror" required>
+                                            @error('authors')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_title" class="block font-semibold">Judul Publikasi</label>
-                                            <input type="text" name="title" value="{{ $pub->title }}"
-                                                class="form-control" placeholder="Judul publikasi" required>
+                                            <input type="text" name="title" value="{{ old('title', $pub->title) }}"
+                                                class="form-control @error('title') is-invalid @enderror"
+                                                placeholder="Judul publikasi" required>
+                                            @error('title')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_year" class="block font-semibold">Tahun Publikasi</label>
-                                            <input type="number" name="year" value="{{ $pub->year }}"
-                                                class="form-control" placeholder="Tahun" required>
+                                            <input type="number" name="year" value="{{ old('year', $pub->year) }}"
+                                                class="form-control @error('year') is-invalid @enderror"
+                                                placeholder="Tahun" required>
+                                            @error('year')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_journal_name" class="block font-semibold"></label>
-                                            <input type="text" name="journal_name" value="{{ $pub->journal_name }}"
-                                                class="form-control" placeholder="Nama jurnal" required>
+                                            <input type="text" name="journal_name" value="{{ old('journal_name', $pub->journal_name) }}"
+                                                class="form-control @error('journal_name') is-invalid @enderror"
+                                                placeholder="Nama jurnal" required>
+                                            @error('journal_name')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_volume" class="block font-semibold">Volume</label>
-                                            <input type="text" name="volume" value="{{ $pub->volume }}"
-                                                class="form-control" placeholder="Volume">
+                                            <input type="text" name="volume" value="{{ old('volume', $pub->volume) }}"
+                                                class="form-control @error('volume') is-invalid @enderror"
+                                                placeholder="Volume">
+                                            @error('volume')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_pages" class="block font-semibold">Halaman</label>
-                                            <input type="text" name="pages" value="{{ $pub->pages }}"
-                                                class="form-control" placeholder="Halaman">
+                                            <input type="text" name="pages" value="{{ old('pages', $pub->pages) }}"
+                                                class="form-control @error('pages') is-invalid @enderror"
+                                                placeholder="Halaman">
+                                            @error('pages')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="mb-4">
                                             <label for="edit_link" class="block font-semibold">Link Publikasi</label>
-                                            <input type="url" name="link" value="{{ $pub->link }}"
-                                                class="form-control" placeholder="Contoh: elsevier.com">
+                                            <input type="text" name="link" value="{{ old('link', $pub->link) }}"
+                                                class="form-control @error('link') is-invalid @enderror"
+                                                placeholder="Contoh: elsevier.com">
+                                            @error('link')
+                                                <div class="text-danger mt-1">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </div>
                                         <div class="text-end">
                                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
@@ -138,32 +180,78 @@
 
             <div class="mb-4">
                 <label for="authors" class="block font-semibold">Nama Penulis</label>
-                <input type="text" name="authors" placeholder="Nama pengarang (pisah koma)" class="form-control"
-                    required>
+                <input type="text" name="authors" placeholder="Nama pengarang (pisah koma)"
+                    value="{{ old('authors') }}"
+                    class="form-control @error('authors') is-invalid @enderror" required>
+                @error('authors')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="title" class="block font-semibold">Judul Publikasi</label>
-                <input type="text" name="title" placeholder="Judul publikasi" class="form-control" required>
+                <input type="text" name="title" placeholder="Judul publikasi" value="{{ old('title') }}" class="form-control @error('title') is-invalid @enderror" required>
+                @error('title')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="year" class="block font-semibold">Tahun Publikasi</label>
-                <input type="number" name="year" placeholder="Tahun" class="form-control" required>
+                <input type="number" name="year" placeholder="Tahun"
+                    value="{{ old('year') }}"
+                    class="form-control @error('year') is-invalid @enderror" required>
+                @error('year')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="journal_name" class="block font-semibold">Nama Jurnal</label>
-                <input type="text" name="journal_name" placeholder="Nama jurnal" class="form-control" required>
+                <input type="text" name="journal_name" placeholder="Nama jurnal"
+                    value="{{ old('journal_name') }}"
+                    class="form-control @error('journal_name') is-invalid @enderror" required>
+                @error('journal_name')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="volume" class="block font-semibold">Volume</label>
-                <input type="number" name="volume" placeholder="misal: 3" class="form-control">
+                <input type="number" name="volume" placeholder="misal: 3"
+                    value="{{ old('volume') }}"
+                    class="form-control @error('volume') is-invalid @enderror">
+                @error('volume')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="pages" class="block font-semibold">Halaman</label>
-                <input type="text" name="pages" placeholder="misal: 10–20" class="form-control">
+                <input type="text" name="pages" placeholder="misal: 10–20"
+                    value="{{ old('pages') }}"
+                    class="form-control @error('pages') is-invalid @enderror">
+                @error('pages')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="link" class="block font-semibold">Link Publikasi</label>
-                <input type="text" name="link" placeholder="Contoh: elsevier.com" class="form-control">
+                <input type="text" name="link" placeholder="Contoh: elsevier.com"
+                    value="{{ old('link') }}"
+                    class="form-control @error('link') is-invalid @enderror">
+                @error('link')
+                    <div class="text-danger mt-1">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">Tambah Publikasi</button>
@@ -172,14 +260,44 @@
     </x-modal>
 
     {{-- SweetAlert2 --}}
-    @if (session('status'))
+    @if (session('success'))
         <script>
             Swal.fire({
                 icon: 'success',
                 title: 'Sukses!',
-                text: '{{ session('status') }}',
+                text: '{{ session('success') }}',
                 timer: 2500,
                 showConfirmButton: false
+            });
+        </script>
+    @endif
+    
+    {{-- Error Handling Untuk Tetap Membuka Modal Tambah Publikasi --}}
+    @if (session('modal') === 'tambahModal')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('tambahModal').classList.remove('hidden');
+            });
+        </script>
+    @endif
+
+    {{-- Error Handling Untuk Tetap Membuka Modal Edit Publikasi --}}
+    @if (session('modal') === 'editModal' && session('publication_id'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('editModal-{{ session('publication_id') }}').classList.remove('hidden');
+            });
+        </script>
+    @endif
+
+    {{-- SweetAlert2 untuk error --}}
+    @if ($errors->any())
+        <script>
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat menyimpan data. Silakan periksa kembali isian Anda.',
+                icon: 'error',
+                confirmButtonText: 'Oke'
             });
         </script>
     @endif
