@@ -62,7 +62,11 @@
                         <x-input-label for="name" :value="__('Nama')" />
                         <x-text-input id="name" name="name" type="text" class="form-control"
                             :value="old('name', $user->name)" required autofocus autocomplete="name" />
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        @error('name')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Email -->
@@ -70,7 +74,11 @@
                         <x-input-label for="email" :value="__('Email')" />
                         <x-text-input id="email" name="email" type="text" class="form-control"
                             :value="old('email', $user->email)" readonly />
-                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                        @error('email')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Gelar Depan -->
@@ -78,7 +86,11 @@
                         <x-input-label for="gelar_depan" :value="__('Gelar Depan')" />
                         <x-text-input id="gelar_depan" name="gelar_depan" type="text" class="form-control"
                             :value="old('gelar_depan', $user->member->gelar_depan ?? '')" placeholder="Contoh: Dr. atau Prof." />
-                        <x-input-error :messages="$errors->get('gelar_depan')" class="mt-2" />
+                        @error('gelar_depan')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Gelar Belakang -->
@@ -88,7 +100,11 @@
                             <x-text-input id="gelar_belakang_{{ $i }}"
                                 name="gelar_belakang_{{ $i }}" type="text" class="form-control"
                                 :value="old('gelar_belakang_' . $i, $user->member->{'gelar_belakang_' . $i} ?? '')" placeholder="Contoh: S.Kom. atau M.Kom." />
-                            <x-input-error :messages="$errors->get('gelar_belakang_' . $i)" class="mt-2" />
+                            @error('gelar_belakang_' . $i)
+                                <div class="text-danger mt-1">
+                                    {{ $message }}
+                                </div>
+                            @enderror
                         </div>
                     @endfor
 
@@ -97,7 +113,11 @@
                         <x-input-label for="nik" :value="__('NIK')" />
                         <x-text-input id="nik" name="nik" type="text" class="form-control"
                             :value="old('nik', $user->member->nik ?? '')" placeholder="Masukkan NIK anda sesuai KTP" required />
-                        <x-input-error :messages="$errors->get('nik')" class="mt-2" />
+                        @error('nik')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Tempat Lahir -->
@@ -105,15 +125,28 @@
                         <x-input-label for="tempat_lahir" :value="__('Tempat Lahir')" />
                         <x-text-input id="tempat_lahir" name="tempat_lahir" type="text" class="form-control"
                             :value="old('tempat_lahir', $user->member->tempat_lahir ?? '')" placeholder="Masukkan tempat anda lahir" required />
-                        <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-2" />
+                        @error('tempat_lahir')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Tanggal Lahir -->
                     <div class="mb-4">
                         <x-input-label for="tanggal_lahir" :value="__('Tanggal Lahir')" />
                         <x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" class="form-control"
-                            :value="old('tanggal_lahir', ($user->member && $user->member->tanggal_lahir) ? $user->member->tanggal_lahir->format('Y-m-d') : '')" required />
-                        <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-2" />
+                            :value="old(
+                                'tanggal_lahir',
+                                $user->member && $user->member->tanggal_lahir
+                                    ? $user->member->tanggal_lahir->format('Y-m-d')
+                                    : '',
+                            )" required />
+                        @error('tanggal_lahir')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- No HP -->
@@ -121,7 +154,11 @@
                         <x-input-label for="no_hp" :value="__('No HP')" />
                         <x-text-input id="no_hp" name="no_hp" type="text" class="form-control"
                             :value="old('no_hp', $user->member->no_hp ?? '')" placeholder="Masukkan nomor handphone yang aktif" required />
-                        <x-input-error :messages="$errors->get('no_hp')" class="mt-2" />
+                        @error('no_hp')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- No WhatsApp -->
@@ -129,16 +166,24 @@
                         <x-input-label for="no_wa" :value="__('No WhatsApp')" />
                         <x-text-input id="no_wa" name="no_wa" type="text" class="form-control"
                             :value="old('no_wa', $user->member->no_wa ?? '')" placeholder="Masukkan nomor whatsapp yang aktif" required />
-                        <x-input-error :messages="$errors->get('no_wa')" class="mt-2" />
+                        @error('no_wa')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Email Institusi -->
                     <div class="mb-4">
                         <x-input-label for="email_institusi" :value="__('Email Institusi')" />
                         <x-text-input id="email_institusi" name="email_institusi" type="email"
-                            class="form-control" :value="old('email_institusi', $user->member->email_institusi ?? '')"
-                            placeholder="Masukkan email institusi anda" required />
-                        <x-input-error :messages="$errors->get('email_institusi')" class="mt-2" />
+                            class="form-control" :value="old('email_institusi', $user->member->email_institusi ?? '')" placeholder="Masukkan email institusi anda"
+                            required />
+                        @error('email_institusi')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Universitas -->
@@ -147,7 +192,11 @@
                         <x-text-input id="universitas" name="universitas" type="text" class="form-control"
                             :value="old('universitas', $user->member->universitas ?? '')"
                             placeholder="Contoh: Brawijaya, Airlangga, Gajah Mada (tanpa universitas)" required />
-                        <x-input-error :messages="$errors->get('universitas')" class="mt-2" />
+                        @error('universitas')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Fakultas -->
@@ -155,8 +204,13 @@
                         <x-input-label for="fakultas" :value="__('Fakultas')" />
                         <x-text-input id="fakultas" name="fakultas" type="text" class="form-control"
                             :value="old('fakultas', $user->member->fakultas ?? '')"
-                            placeholder="Contoh: Ilmu Komputer, Peternakan, Perikanan & Kelautan (tanpa fakultas)" required />
-                        <x-input-error :messages="$errors->get('fakultas')" class="mt-2" />
+                            placeholder="Contoh: Ilmu Komputer, Peternakan, Perikanan & Kelautan (tanpa fakultas)"
+                            required />
+                        @error('fakultas')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Prodi -->
@@ -164,15 +218,24 @@
                         <x-input-label for="prodi" :value="__('Program Studi')" />
                         <x-text-input id="prodi" name="prodi" type="text" class="form-control"
                             :value="old('prodi', $user->member->prodi ?? '')" placeholder="Contoh: Teknik Informatika, Teknik Sipil" required />
-                        <x-input-error :messages="$errors->get('prodi')" class="mt-2" />
+                        @error('prodi')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Alamat -->
                     <div class="mb-4">
                         <x-input-label for="alamat_jalan" :value="__('Alamat Jalan')" />
                         <textarea id="alamat_jalan" name="alamat_jalan" rows="3"
-                            class="form-control rounded-md shadow-sm border-gray-300" placeholder="Masukkan alamat jalan lengkap anda" required>{{ old('alamat_jalan', $user->member->alamat_jalan ?? '') }}</textarea>
-                        <x-input-error :messages="$errors->get('alamat_jalan')" class="mt-2" />
+                            class="form-control rounded-md shadow-sm border-gray-300" placeholder="Masukkan alamat jalan lengkap anda"
+                            required>{{ old('alamat_jalan', $user->member->alamat_jalan ?? '') }}</textarea>
+                        @error('alamat_jalan')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Provinsi -->
@@ -183,7 +246,11 @@
                             <option value="">Pilih Provinsi</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
-                        <x-input-error :messages="$errors->get('provinsi')" class="mt-2" />
+                        @error('provinsi')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
                     <!-- Kabupaten/Kota -->
                     <div class="mb-4">
@@ -193,7 +260,11 @@
                             <option value="">Pilih Kabupaten</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
-                        <x-input-error :messages="$errors->get('kabupaten')" class="mt-2" />
+                        @error('kabupaten')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
                     <!-- Kecamatan -->
                     <div class="mb-4">
@@ -203,7 +274,11 @@
                             <option value="">Pilih Kecamatan</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
-                        <x-input-error :messages="$errors->get('kecamatan')" class="mt-2" />
+                        @error('kecamatan')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
                     <!-- Kelurahan -->
                     <div class="mb-4">
@@ -213,15 +288,23 @@
                             <option value="">Pilih Kelurahan</option>
                             {{-- Options dimuat via JavaScript --}}
                         </select>
-                        <x-input-error :messages="$errors->get('kelurahan')" class="mt-2" />
+                        @error('kelurahan')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
                     <!-- Kode Pos -->
                     <div class="mb-4">
                         <x-input-label for="kode_pos" :value="__('Kode Pos')" />
                         <x-text-input id="kode_pos" name="kode_pos" type="text" class="form-control"
-                            :value="old('kode_pos', $user->member->kode_pos ?? '')" readonly />
-                        <x-input-error :messages="$errors->get('kode_pos')" class="mt-2" />
+                            :value="old('kode_pos', $user->member->kode_pos ?? '')" />
+                        @error('kode_pos')
+                            <div class="text-danger mt-1">
+                                {{ $message }}
+                            </div>
+                        @enderror
                     </div>
 
 
