@@ -43,7 +43,9 @@
                             <label for="description" class="block font-semibold">Deskripsi Divisi</label>
                             <textarea name="description" id="description" class="form-control editor" rows="10">{{ old('description', $user->division->description ?? '') }}</textarea>
                             @error('description')
-                                <p class="text-danger text-sm mt-1">{{ $message }}</p>
+                                <div class="text-danger mt-1">
+                                    {{ $message }}
+                                </div>
                             @enderror
                         </div>
                         <div class="text-center">
@@ -78,11 +80,13 @@
     @endif
 </body>
 <script>
-    document.getElementById('formEditDeskripsi').addEventListener('submit', function (e) {
+    document.getElementById('formEditDeskripsi').addEventListener('submit', function(e) {
         e.preventDefault(); // Cegah submit default
 
         // Ambil konten dari TinyMCE
-        let content = tinymce.get('description').getContent({ format: 'text' }).trim();
+        let content = tinymce.get('description').getContent({
+            format: 'text'
+        }).trim();
 
         if (!content) {
             Swal.fire({
