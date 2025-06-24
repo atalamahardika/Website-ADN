@@ -838,17 +838,6 @@
         </script>
     @endif
 
-    @if (session('status'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Sukses!',
-                text: '{{ session('status') }}',
-                timer: 2500,
-                showConfirmButton: false
-            });
-        </script>
-    @endif
 </body>
 <script>
     // API untuk memuat data wilayah
