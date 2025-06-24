@@ -117,9 +117,11 @@ class MembershipExport implements FromCollection, WithHeadings, WithMapping, Wit
         // Format alamat lengkap dengan nama wilayah
         $alamat = $this->formatFullAddress($member);
 
-        // Ambil masa aktif dari payment yang masih aktif
-        $activePayment = $membership->getActivePayment();
-        $activeUntil = $activePayment ? $activePayment->active_until->format('d/m/Y') : '-';
+        // Ambil masa aktif dari kolom active_until pada tabel membership_payments
+        $activeUntil = '-';
+        if ($payment) {
+            $activeUntil = $payment->active_until ? $payment->active_until->format('d/m/Y') : '-';
+        }
 
         // Format tipe pendaftaran
         $registrationType = $data->registration_type;
