@@ -6,6 +6,7 @@ use App\Models\PaymentSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -41,17 +42,19 @@ class MemberController extends Controller
     public function biografi(Request $request)
     {
         $user = auth()->user();
+        $edu = $user->member ? $user->member->educationalHistories()->get() : collect();
         return view('user.member.biografi', [
             'title' => 'Biografi Saya ',
             'subtitle' => 'Kelola biografi saya',
-            'user' => $user
+            'user' => $user,
+            'edu' => $edu
         ]);
     }
 
     public function biografiUpdate(Request $request)
     {
         $request->validate([
-            'biografi' => 'nullable|string|max:2000',
+            'biografi' => 'required|string|max:5000',
         ]);
 
         $user = auth()->user();
@@ -142,7 +145,7 @@ class MemberController extends Controller
 
     public function storePendidikan(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'jenjang' => 'required|string|max:255',
             'institusi' => 'required|string|max:255',
             'program_studi' => 'required|string|max:255',
@@ -150,34 +153,70 @@ class MemberController extends Controller
             'tahun_lulus' => 'required|digits:4|gte:tahun_masuk',
         ]);
 
-        $user = auth()->user();
-        $user->member->educationalHistories()->create($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'modalAddEdu'); // Kirim ID modal agar bisa dibuka kembali
+        }
 
-        return redirect()->back()->with('status', 'Riwayat pendidikan berhasil ditambahkan.');
+        try {
+            $user = auth()->user();
+            // Pastikan kolom-kolom ini ada di $fillable di model EducationalHistory
+            $user->member->educationalHistories()->create([
+                'jenjang' => $request->jenjang,
+                'institusi' => $request->institusi,
+                'program_studi' => $request->program_studi,
+                'tahun_masuk' => $request->tahun_masuk,
+                'tahun_lulus' => $request->tahun_lulus,
+                // Pastikan 'member_id' otomatis terisi melalui relasi belongsTo Member
+                // atau tambahkan secara eksplisit jika relasi tidak otomatis mengisi
+            ]);
+
+            return redirect()->back()->with('status', 'Riwayat pendidikan berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            \Log::error('Error saving educational history: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan riwayat pendidikan: ' . $e->getMessage());
+        }
     }
 
     public function updatePendidikan(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'jenjang' => 'required|string|max:255',
             'institusi' => 'required|string|max:255',
             'program_studi' => 'required|string|max:255',
-            'tahun_masuk' => 'required|integer|min:1900|max:' . date('Y'),
-            'tahun_lulus' => 'required|integer|min:1900|max:' . (date('Y') + 10),
+            'tahun_masuk' => 'required|digits:4', // Diubah dari integer|min:1900|max:' . date('Y')
+            'tahun_lulus' => 'required|digits:4|gte:tahun_masuk', // Diubah dari integer|min:1900|max:' . (date('Y') + 10)
         ]);
 
-        $user = auth()->user();
-        $edu = EducationalHistory::where('member_id', $user->member->id)->findOrFail($id);
+        if ($validator->fails()) {
+            // Jika validasi gagal, redirect kembali dengan error, input lama, dan ID modal
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'edit-edu') // Menandakan bahwa modal edit yang harus dibuka
+                ->with('education_id', $id); // Menyimpan ID pendidikan yang sedang diedit
+        }
 
-        $edu->update($request->only([
-            'jenjang',
-            'institusi',
-            'program_studi',
-            'tahun_masuk',
-            'tahun_lulus'
-        ]));
+        try {
+            $user = auth()->user();
+            // Temukan riwayat pendidikan berdasarkan ID dan pastikan itu milik member yang sedang login
+            $edu = EducationalHistory::where('member_id', $user->member->id)->findOrFail($id);
 
-        return redirect()->route('biografi')->with('status', 'Riwayat pendidikan berhasil diperbarui.');
+            $edu->update($request->only([
+                'jenjang',
+                'institusi',
+                'program_studi',
+                'tahun_masuk',
+                'tahun_lulus'
+            ]));
+
+            return redirect()->route('biografi')->with('status', 'Riwayat pendidikan berhasil diperbarui.');
+        } catch (\Exception $e) {
+            \Log::error('Error updating educational history: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui riwayat pendidikan: ' . $e->getMessage());
+        }
     }
 
     public function destroyPendidikan($id)
@@ -191,35 +230,68 @@ class MemberController extends Controller
 
     public function storePenghargaan(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'penyelenggara' => 'nullable|string|max:255',
-            'tahun' => 'nullable|numeric|min:1900|max:' . date('Y'),
+            'penyelenggara' => 'required|string|max:255',
+            'tahun' => 'required|digits:4'
         ]);
 
-        $user = auth()->user();
-        $user->member->awards()->create([
-            'nama' => $request->nama,
-            'penyelenggara' => $request->penyelenggara,
-            'tahun' => $request->tahun,
-        ]);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'modalAddAward'); // Kirim ID modal agar bisa dibuka kembali
+        }
 
-        return redirect()->back()->with('status', 'Penghargaan berhasil ditambahkan.');
+        try {
+            $user = auth()->user();
+            // Pastikan kolom-kolom ini ada di $fillable di model Award
+            $user->member->awards()->create([
+                'nama' => $request->nama,
+                'penyelenggara' => $request->penyelenggara,
+                'tahun' => $request->tahun,
+            ]);
+
+            return redirect()->back()->with('status', 'Penghargaan berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            \Log::error('Error saving award: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan penghargaan: ' . $e->getMessage());
+        }
     }
 
     public function updatePenghargaan(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
-            'penyelenggara' => 'nullable|string|max:255',
-            'tahun' => 'nullable|numeric|min:1900|max:' . date('Y'),
+            'penyelenggara' => 'required|string|max:255',
+            'tahun' => 'required|digits:4'
         ]);
 
-        $user = auth()->user();
-        $award = Award::where('member_id', $user->member->id)->findOrFail($id);
-        $award->update($request->only('nama', 'penyelenggara', 'tahun'));
+        if ($validator->fails()) {
+            // Jika validasi gagal, redirect kembali dengan error, input lama, dan ID modal
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'edit-award') // Menandakan bahwa modal edit penghargaan yang harus dibuka
+                ->with('award_id', $id); // Menyimpan ID penghargaan yang sedang diedit
+        }
 
-        return redirect()->route('biografi')->with('status', 'Penghargaan berhasil diperbarui.');
+        try {
+            $user = auth()->user();
+            // Temukan penghargaan berdasarkan ID dan pastikan itu milik member yang sedang login
+            $award = Award::where('member_id', $user->member->id)->findOrFail($id);
+
+            $award->update($request->only([
+                'nama',
+                'penyelenggara',
+                'tahun'
+            ]));
+
+            return redirect()->route('biografi')->with('status', 'Penghargaan berhasil diperbarui.');
+        } catch (\Exception $e) {
+            \Log::error('Error updating award: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui penghargaan: ' . $e->getMessage());
+        }
     }
 
     public function destroyPenghargaan($id)
@@ -233,37 +305,72 @@ class MemberController extends Controller
 
     public function storeMengajar(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'mata_kuliah' => 'required|string|max:255',
             'institusi' => 'required|string|max:255',
-            'tahun_ajar' => ['required', 'digits:4', 'integer'],
-        ], [
-            'tahun_ajar.digits' => 'Tahun ajar harus terdiri dari 4 digit.',
-            'tahun_ajar.integer' => 'Tahun ajar harus berupa angka.',
+            'tahun_ajar' => 'required|digits:4',
         ]);
 
-        $user = auth()->user();
-        $user->member->teachingHistories()->create($request->only(['mata_kuliah', 'institusi', 'tahun_ajar']));
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'modalAddMengajar'); // Kirim ID modal agar bisa dibuka kembali
+        }
 
-        return redirect()->back()->with('status', 'Riwayat mengajar berhasil ditambahkan.');
+        try {
+            $user = auth()->user();
+            // Pastikan kolom-kolom ini ada di $fillable di model TeachingHistory
+            $user->member->teachingHistories()->create([
+                'mata_kuliah' => $request->mata_kuliah,
+                'institusi' => $request->institusi,
+                'tahun_ajar' => $request->tahun_ajar,
+            ]);
+
+            return redirect()->back()->with('status', 'Riwayat mengajar berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            \Log::error('Error saving teaching history: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan riwayat mengajar: ' . $e->getMessage());
+        }
     }
 
     public function updateMengajar(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'mata_kuliah' => 'required|string|max:255',
             'institusi' => 'required|string|max:255',
-            'tahun_ajar' => ['required', 'digits:4', 'integer'],
-        ], [
-            'tahun_ajar.digits' => 'Tahun ajar harus terdiri dari 4 digit.',
-            'tahun_ajar.integer' => 'Tahun ajar harus berupa angka.',
+            'tahun_ajar' => 'required|digits:4',
         ]);
 
-        $user = auth()->user();
-        $item = TeachingHistory::where('member_id', $user->member->id)->findOrFail($id);
-        $item->update($request->only(['mata_kuliah', 'institusi', 'tahun_ajar']));
+        // Jika validasi gagal, kembalikan ke halaman sebelumnya dengan error, input lama,
+        // dan informasi modal yang harus dibuka kembali
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'edit-mengajar') // Menandakan bahwa modal edit riwayat mengajar yang harus dibuka
+                ->with('teach_id', $id); // Menyimpan ID riwayat mengajar yang sedang diedit
+        }
 
-        return redirect()->route('biografi')->with('status', 'Riwayat mengajar berhasil diperbarui.');
+        try {
+            $user = auth()->user();
+            // Cari riwayat mengajar berdasarkan ID dan pastikan itu milik member yang sedang login
+            $item = TeachingHistory::where('member_id', $user->member->id)->findOrFail($id);
+
+            // Perbarui data riwayat mengajar
+            $item->update($request->only([
+                'mata_kuliah',
+                'institusi',
+                'tahun_ajar'
+            ]));
+
+            // Redirect dengan pesan sukses
+            return redirect()->route('biografi')->with('status', 'Riwayat mengajar berhasil diperbarui.');
+        } catch (\Exception $e) {
+            // Tangani error jika terjadi masalah saat memperbarui data
+            \Log::error('Error updating teaching history: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui riwayat mengajar: ' . $e->getMessage());
+        }
     }
 
     public function destroyMengajar($id)
@@ -332,61 +439,167 @@ class MemberController extends Controller
 
     public function publicationStore(Request $request)
     {
-        $request->validate([
-            'authors' => 'required|string', // pisah dengan koma
+        $validator = Validator::make($request->all(), [
+            'authors' => [
+                'required',
+                'string',
+                // Validasi kustom untuk memastikan penulis hanya dipisah koma (,) dan tidak ada angka
+                function ($attribute, $value, $fail) {
+                    // 1. Cek hanya boleh ada huruf, spasi, dan koma sebagai pemisah.
+                    // Tidak boleh ada karakter selain a-z, A-Z, spasi, dan koma.
+                    if (preg_match('/[^a-zA-Z\s,]/', $value)) {
+                        $fail('Nama penulis hanya boleh mengandung huruf dan spasi. Pemisah antar penulis adalah koma (,)');
+                        return; // Penting: langsung berhenti jika validasi ini gagal
+                    }
+
+                    // 2. Pisahkan penulis berdasarkan koma
+                    $individualAuthors = array_filter(array_map('trim', explode(',', $value)), 'strlen');
+
+                    if (empty($individualAuthors)) {
+                        $fail('Nama penulis tidak boleh kosong.');
+                        return;
+                    }
+
+                    // 3. Validasi setiap nama penulis secara individual
+                    foreach ($individualAuthors as $author) {
+                        // Cek apakah ada angka di dalam nama penulis
+                        if (preg_match('/[0-9]/', $author)) {
+                            $fail('Nama penulis tidak boleh mengandung angka: ' . $author);
+                            return;
+                        }
+                        // Pastikan nama penulis hanya mengandung huruf dan spasi (setelah dipisahkan)
+                        if (preg_match('/[^a-zA-Z\s]/', $author)) {
+                            $fail('Setiap nama penulis hanya boleh mengandung huruf dan spasi: ' . $author);
+                            return;
+                        }
+                    }
+                },
+            ],
             'title' => 'required|string',
-            'year' => 'required|integer',
+            'year' => 'required|integer|digits:4',
             'journal_name' => 'required|string',
-            'volume' => 'nullable|string',
-            'pages' => 'nullable|string',
+            'volume' => 'nullable|string|max:20',
+            'pages' => 'nullable|string|max:50',
             'link' => 'required|string',
         ]);
 
-        $authorsArray = array_map('trim', explode(',', $request->authors));
-        $formattedAuthors = $this->formatAuthorsToHarvard($authorsArray);
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'tambahModal'); // Kirim ID modal agar bisa dibuka kembali
+        }
 
-        auth()->user()->member->publications()->create([
-            'authors' => $authorsArray,
-            'formatted_authors' => $formattedAuthors,
-            'title' => $request->title,
-            'year' => $request->year,
-            'journal_name' => $request->journal_name,
-            'volume' => $request->volume,
-            'pages' => $request->pages,
-            'link' => $request->link,
-        ]);
+        try {
+            // Split authors menggunakan koma (,)
+            $authorsArray = array_map('trim', explode(',', $request->authors));
+            $authorsArray = array_filter($authorsArray, 'strlen'); // Filter entri kosong
 
-        return back()->with('status', 'Publikasi berhasil ditambahkan.');
+            $formattedAuthors = $this->formatAuthorsToHarvard($authorsArray);
+
+            // Pastikan kolom 'authors' di database Anda bisa menyimpan JSON
+            // Atau ubah tipe kolom 'authors' di model Publication menjadi 'array'
+            // dengan menambahkan `$casts = ['authors' => 'array'];`
+            auth()->user()->member->publications()->create([
+                'authors' => $authorsArray, // Ini akan otomatis di-cast ke JSON string jika ada casting di model
+                'formatted_authors' => $formattedAuthors,
+                'title' => $request->title,
+                'year' => $request->year,
+                'journal_name' => $request->journal_name,
+                'volume' => $request->volume,
+                'pages' => $request->pages,
+                'link' => $request->link,
+            ]);
+
+            return back()->with('success', 'Publikasi berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            // Untuk debugging, Anda bisa log error ini lebih detail
+            \Log::error('Error saving publication: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan publikasi: ' . $e->getMessage());
+        }
     }
 
     public function publicationUpdate(Request $request, $id)
     {
-        $request->validate([
-            'authors' => 'required|string',
-            'title' => 'required|string',
-            'year' => 'required|integer',
-            'journal_name' => 'required|string',
-            'volume' => 'nullable|string',
-            'pages' => 'nullable|string',
-            'link' => 'nullable|url',
-        ]);
-
-        $authorsArray = array_map('trim', explode(',', $request->authors));
-        $formattedAuthors = $this->formatAuthorsToHarvard($authorsArray);
-
         $publication = PublicationMember::where('member_id', auth()->user()->member->id)->findOrFail($id);
-        $publication->update([
-            'authors' => $authorsArray,
-            'formatted_authors' => $formattedAuthors,
-            'title' => $request->title,
-            'year' => $request->year,
-            'journal_name' => $request->journal_name,
-            'volume' => $request->volume,
-            'pages' => $request->pages,
-            'link' => $request->link,
+
+        $validator = Validator::make($request->all(), [
+            'authors' => [
+                'required',
+                'string',
+                // PERBAIKAN: Validasi kustom untuk memastikan penulis hanya dipisah koma (,)
+                function ($attribute, $value, $fail) {
+                    // 1. Cek hanya boleh ada huruf, spasi, dan koma sebagai pemisah.
+                    // Tidak boleh ada karakter selain a-z, A-Z, spasi, dan koma.
+                    if (preg_match('/[^a-zA-Z\s,]/', $value)) {
+                        $fail('Nama penulis hanya boleh mengandung huruf dan spasi. Pemisah antar penulis adalah koma (,)');
+                        return; // Penting: langsung berhenti jika validasi ini gagal
+                    }
+
+                    // 2. Pisahkan penulis berdasarkan koma
+                    $individualAuthors = array_filter(array_map('trim', explode(',', $value)), 'strlen');
+
+                    if (empty($individualAuthors)) {
+                        $fail('Nama penulis tidak boleh kosong.');
+                        return;
+                    }
+
+                    // 3. Validasi setiap nama penulis secara individual
+                    foreach ($individualAuthors as $author) {
+                        // Cek apakah ada angka di dalam nama penulis
+                        if (preg_match('/[0-9]/', $author)) {
+                            $fail('Nama penulis tidak boleh mengandung angka: ' . $author);
+                            return;
+                        }
+                        // Pastikan nama penulis hanya mengandung huruf dan spasi (setelah dipisahkan)
+                        if (preg_match('/[^a-zA-Z\s]/', $author)) {
+                            $fail('Setiap nama penulis hanya boleh mengandung huruf dan spasi: ' . $author);
+                            return;
+                        }
+                    }
+                },
+            ],
+            'title' => 'required|string',
+            'year' => 'required|integer|digits:4',
+            'journal_name' => 'required|string',
+            'volume' => 'nullable|string|max:20',
+            'pages' => 'nullable|string|max:50',
+            'link' => 'required|string',
         ]);
 
-        return back()->with('status', 'Publikasi berhasil diperbarui.');
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('modal', 'editModal') // Kirim ID modal 'editModal'
+                ->with('publication_id', $id); // Kirim juga ID publikasi untuk pre-fill modal
+        }
+
+        try {
+            // Split authors menggunakan koma (,)
+            $authorsArray = array_map('trim', explode(',', $request->authors));
+            $authorsArray = array_filter($authorsArray, 'strlen'); // Filter entri kosong
+
+            // Hitung formatted_authors setelah array penulis bersih
+            $formattedAuthors = $this->formatAuthorsToHarvard($authorsArray);
+
+            $publication->update([
+                'authors' => $authorsArray,
+                'formatted_authors' => $formattedAuthors,
+                'title' => $request->title,
+                'year' => $request->year,
+                'journal_name' => $request->journal_name,
+                'volume' => $request->volume,
+                'pages' => $request->pages,
+                'link' => $request->link,
+            ]);
+
+            return back()->with('success', 'Publikasi berhasil diperbarui.');
+        } catch (\Exception $e) {
+            // Untuk debugging, Anda bisa log error ini lebih detail
+            \Log::error('Error updating publication: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return back()->with('error', 'Terjadi kesalahan saat memperbarui publikasi: ' . $e->getMessage());
+        }
     }
 
     public function publicationDestroy($id)
@@ -441,16 +654,16 @@ class MemberController extends Controller
                 Rule::unique('members', 'nik')->ignore($member?->id), // Gunakan $member?->id
             ],
             'tempat_lahir' => 'required|string|max:255',
-            'tanggal_lahir' => 'nullable|date',
-            'no_hp' => 'nullable|string|max:20',
-            'no_wa' => 'nullable|string|max:20',
+            'tanggal_lahir' => 'required|date',
+            'no_hp' => 'required|string|max:20',
+            'no_wa' => 'required|string|max:20',
             'alamat_jalan' => 'required|string',
-            'provinsi' => 'nullable|string',
-            'kabupaten' => 'nullable|string',
-            'kecamatan' => 'nullable|string',
-            'kelurahan' => 'nullable|string',
-            'kode_pos' => 'nullable|string|max:10',
-            'email_institusi' => 'nullable|email|max:255',
+            'provinsi' => 'required|string',
+            'kabupaten' => 'required|string',
+            'kecamatan' => 'required|string',
+            'kelurahan' => 'required|string',
+            'kode_pos' => 'required|string|max:10',
+            'email_institusi' => 'required|email|max:255',
             'universitas' => 'required|string|max:255',
             'fakultas' => 'required|string|max:255',
             'prodi' => 'required|string|max:255',
@@ -480,7 +693,7 @@ class MemberController extends Controller
                 if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
                     // Pengecualian: jangan hapus template photo
                     if (!Str::contains($user->profile_photo, 'template_photo_profile.png')) {
-                         Storage::disk('public')->delete($user->profile_photo);
+                        Storage::disk('public')->delete($user->profile_photo);
                     }
                 }
 
@@ -613,16 +826,6 @@ class MemberController extends Controller
         if ($membership) {
             $paymentHistory = $membership->getApprovedPayments();
         }
-
-        // Get admin notes from membership_payment for rejected status
-        // $rejectedPaymentNotes = null;
-        // if ($membership && $membership->payments()->where('status', 'rejected')->exists()) {
-        //     $rejectedPayment = $membership->payments()
-        //         ->where('status', 'rejected')
-        //         ->latest()
-        //         ->first();
-        //     $rejectedPaymentNotes = $rejectedPayment ? $rejectedPayment->admin_notes : null;
-        // }
 
         // Variabel untuk menyimpan catatan admin dari pembayaran yang ditolak
         $rejectedPaymentNotes = null;
