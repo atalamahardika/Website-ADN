@@ -13,7 +13,9 @@
                 <div class="card" style="background-color: #EDF4EA; padding: 24px;">
                     <h5>Biografi</h5>
                     @if (!empty($user->member->biografi))
-                        <p>{{ $user->member->biografi }}</p>
+                        <div class="prose">
+                            {!! $user->member->biografi !!}
+                        </div>
                     @else
                         <p class="text-gray-500 italic">Belum ada biografi yang ditulis.</p>
                     @endif
