@@ -53,7 +53,241 @@
         html {
             scroll-behavior: smooth;
         }
+
+        /* Custom CSS untuk responsive layout */
+        /* Sidebar styles */
+        .sidebar {
+            background-color: #fff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Offcanvas customization */
+        .offcanvas {
+            background-color: #fff;
+        }
+
+        .offcanvas-header {
+            background-color: #f8f9fa;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 575.98px) {
+
+            /* Mobile styles */
+            .content-bar-header .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .sidebar-profile .card-body {
+                padding: 1rem;
+            }
+
+            .sidebar-menu {
+                padding: 1rem;
+            }
+
+            .sidebar-profile .icon-profile {
+                width: 20px !important;
+                height: 20px !important;
+            }
+
+            .sidebar-profile .rounded-circle {
+                width: 100px !important;
+                height: 100px !important;
+            }
+
+            .sidebar-profile .sidebar-profile-photo {
+                margin-bottom: 10px !important;
+            }
+
+            .content-bar-header .header-title-subtitle h5 {
+                font-size: medium;
+            }
+
+            .content-bar-header .header-title-subtitle p {
+                font-size: small;
+            }
+
+            .custom-carousel-height {
+                height: 100px;
+            }
+
+            .hero-section {
+                height: 120vh !important;
+            }
+
+            .hero-section img {
+                max-width: 350px !important;
+            }
+
+            .contact-section img {
+                width: 30px !important;
+                height: 30px !important;
+            }
+
+            .contact-section .prose p {
+                margin-bottom: 0px !important;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 767.98px) {
+
+            /* Large mobile styles */
+            .content-bar-header .container {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+
+            .contact-section .prose p {
+                margin-bottom: 0px !important;
+            }
+
+            .sidebar-profile img {
+                width: 60px !important;
+                height: 60px !important;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+
+            /* Tablet styles */
+            .content-bar-header .container {
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+
+            .custom-carousel-height {
+                height: 300px;
+            }
+
+            .contact-section .prose p {
+                margin-bottom: 0px !important;
+            }
+
+            .sidebar-profile img {
+                width: 100px !important;
+                height: 100px !important;
+            }
+
+            .hero-section .hero-text h2 {
+                justify-content: center;
+            }
+        }
+
+        @media (min-width: 1200px) {
+
+            /* Desktop styles */
+            .sidebar {
+                width: 320px !important;
+                min-width: 320px;
+            }
+
+            .custom-carousel-height {
+                width: 100%;
+                height: 400px;
+                object-fit: cover;
+            }
+
+            .contact-section .prose p {
+                margin-bottom: 0px !important;
+            }
+        }
+
+        /* Hamburger button styling */
+        .btn-outline-success {
+            border-color: #0BAF6A;
+            color: #0BAF6A;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #0BAF6A;
+            border-color: #0BAF6A;
+        }
+
+        /* Menu item hover effects */
+        .nav-link:hover {
+            background-color: rgba(11, 175, 106, 0.1) !important;
+            color: #0BAF6A !important;
+        }
+
+        /* Active menu item */
+        .nav-link.text-success {
+            background-color: #fff !important;
+            color: #0BAF6A !important;
+            font-weight: bold;
+        }
+
+        /* Dropdown menu styling */
+        .dropdown-menu {
+            border: 1px solid #dee2e6;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Profile photo responsive */
+        .sidebar-profile img {
+            transition: all 0.3s ease;
+        }
+
+        /* Ensure offcanvas is above other content */
+        .offcanvas {
+            z-index: 1050;
+        }
+
+        /* Smooth transitions */
+        .offcanvas {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar,
+        .offcanvas-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track,
+        .offcanvas-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb,
+        .offcanvas-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .offcanvas-body::-webkit-scrollbar-thumb:hover {
+            background: #0BAF6A;
+        }
+
+        /* Custom scrollbar for content */
+        .content-bar::-webkit-scrollbar,
+        .offcanvas-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-bar::-webkit-scrollbar-track,
+        .offcanvas-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .content-bar::-webkit-scrollbar-thumb,
+        .offcanvas-body::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .content-bar::-webkit-scrollbar-thumb:hover,
+        .offcanvas-body::-webkit-scrollbar-thumb:hover {
+            background: #0BAF6A;
+        }
     </style>
+
 
 
 </head>

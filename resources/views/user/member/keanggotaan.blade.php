@@ -146,7 +146,6 @@
                                 </h5>
                             </div>
                             <div class="card-body d-flex justify-content-center">
-
                                 <div class="card-membership"
                                     style="width: 500px; height: 333px; background-color: #15400E; border-radius: 25px;">
                                     <div class="container" style="padding: 20px">
@@ -159,11 +158,11 @@
 
                                         {{-- Foto & Profil --}}
                                         <div class="card-profile d-flex align-items-end gap-3 mt-3">
-                                            <div class="card-profile-photo">
+                                            <div class="card-profile-photo flex-shrink-0">
                                                 <img src="{{ auth()->user()->profile_photo_url }}" alt="Foto Profil"
-                                                    style="width: 125px; height: 125px; border-radius: 10px;">
+                                                    style="width: 125px; height: 125px; border-radius: 10px; object-fit: cover;">
                                             </div>
-                                            <div class="card-profile-user">
+                                            <div class="card-profile-user flex-shrink-1">
                                                 <h4 class="text-white">{{ auth()->user()->name }}</h4>
                                                 <p class="text-white mb-2">{{ $membership->id_member_organization }}
                                                 </p>
@@ -193,6 +192,45 @@
                                             #67917A;
                                         /* second color */
                                         background-size: calc(var(--s)/4.667) var(--s), var(--s) calc(var(--s)/4.667);
+                                    }
+
+                                    @media (max-width: 575.98px) {
+                                        .card-membership {
+                                            width: 300px !important;
+                                            height: 200px !important;
+                                        }
+
+                                        .card-membership .container {
+                                            padding: 12px !important;
+                                        }
+
+                                        .card-logo,
+                                        .card-logo img {
+                                            width: 50px !important;
+                                            height: 50px !important;
+                                        }
+
+                                        .card-profile-photo,
+                                        .card-profile-photo img {
+                                            width: 70px !important;
+                                            height: 70px !important;
+                                        }
+
+                                        .card-profile-user h4 {
+                                            font-size: 14px !important;
+                                            margin-bottom: 2px !important;
+                                            word-break: break-word;
+                                        }
+
+                                        .card-profile-user p {
+                                            font-size: 12px !important;
+                                            margin-bottom: 2px !important;
+                                        }
+
+                                        .card-organization h4 {
+                                            font-size: 14px !important;
+                                            margin-bottom: 7.2px !important;
+                                        }
                                     }
                                 </style>
                             </div>
@@ -739,9 +777,6 @@
                                 <h5 class="card-title text-white mb-0">
                                     <i class="fas fa-history me-2"></i>Riwayat Pembayaran
                                 </h5>
-                                {{-- <a href="{{ route('keanggotaan.payment-history') }}" class="btn btn-sm btn-light">
-                                    <i class="fas fa-eye me-1"></i>Lihat Semua
-                                </a> --}}
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">

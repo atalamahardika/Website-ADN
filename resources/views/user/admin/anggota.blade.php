@@ -15,33 +15,17 @@
                 </div>
             @else
                 <div class="container-fluid">
-                    {{-- Header --}}
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h1 class="h3 mb-0 text-gray-800">{{ $title }}</h1>
-                            <p class="mb-0 text-muted">{{ $subtitle }}</p>
-                        </div>
-                    </div>
-
                     {{-- Konten Anggota Divisi --}}
                     <div class="container-fluid">
                         {{-- Header dengan Search --}}
-                        <div class="row mb-4">
-                            <div class="col">
-                                <form method="GET" action="{{ route('admin.anggota') }}" class="d-flex">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control"
-                                            placeholder="Cari anggota berdasarkan nama, email, universitas, fakultas..."
-                                            name="search" value="{{ $search }}" style="min-width: 300px;">
-                                        <button class="btn btn-outline-primary" type="submit">
-                                            <i class="fas fa-search"></i> Cari
-                                        </button>
-                                        @if ($search)
-                                            <a href="{{ route('admin.anggota') }}" class="btn btn-outline-secondary">
-                                                <i class="fas fa-times"></i> Reset
-                                            </a>
-                                        @endif
-                                    </div>
+                        <div class="mb-4">
+                            <div class="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+                                <form action="{{ route('admin.anggota') }}" method="GET" class="d-flex flex-grow-1 gap-2" style="height: 37px;">
+                                    <input type="text" name="search" class="form-control" placeholder="Cari anggota berdasarkan nama, email, universitas, fakultas..." value="{{ $search }}">
+                                    <button class="btn btn-outline-primary" type="submit">Cari</button>
+                                    @if ($search)
+                                        <a href="{{ route('admin.anggota') }}" class="btn btn-outline-secondary">Reset</a>
+                                    @endif
                                 </form>
                             </div>
                         </div>
@@ -203,7 +187,7 @@
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <div class="d-flex justify-content-center">
-                                        {{ $memberships->appends(['search' => $search])->links() }}
+                                        {{ $memberships->appends(['search' => $search])->links('vendor.pagination.bootstrap-5') }}
                                     </div>
                                 </div>
                             </div>

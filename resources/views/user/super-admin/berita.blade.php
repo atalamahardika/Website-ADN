@@ -5,6 +5,22 @@
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
         border-color: #2e7d32;
     }
+
+    @media (min-width: 1200px) {
+        .berita-card img {
+            width: 25%;
+        }
+    }
+
+    @media (max-width: 1199.98px) {
+        .card-img-top {
+            width: 100% !important;
+            height: auto !important;
+            object-fit: cover !important;
+            aspect-ratio: 3/2 !important;
+            max-height: 250px;
+        }
+    }
 </style>
 
 <body>
@@ -15,41 +31,44 @@
             @includeWhen($title === 'Berita', 'components.content.main')
 
             {{-- Tulis kode di bawah ini untuk isi kontennya --}}
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>List Berita</h4>
-                <form action="{{ route('superadmin.berita') }}" method="GET" class="d-flex me-3">
-                    <input type="text" name="search" class="form-control me-2" placeholder="Cari judul berita..."
-                        value="{{ request('search') }}">
-                    <button type="submit" class="btn btn-outline-secondary me-2">Cari</button>
-                    @if (request('search'))
-                        <a href="{{ route('superadmin.berita') }}" class="btn btn-outline-secondary">Reset</a>
-                    @endif
-
-                </form>
-                <button class="btn btn-primary"
+            <div class="mb-4">
+                <div class="text-center mb-3">
+                    <h4 class="fw-bold">List Berita</h4>
+                </div>
+                <div class="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+                    <form action="{{ route('superadmin.berita') }}" method="GET" class="d-flex flex-grow-1 gap-2">
+                        <input type="text" name="search" class="form-control" placeholder="Cari judul berita..."
+                            value="{{ request('search') }}">
+                        <button type="submit" class="btn btn-outline-secondary">Cari</button>
+                        @if (request('search'))
+                            <a href="{{ route('superadmin.berita') }}" class="btn btn-outline-secondary">Reset</a>
+                        @endif
+                    </form>
+                </div>
+                <button class="btn btn-primary w-100 w-md-auto"
                     onclick="document.getElementById('modalTambahBerita').classList.remove('hidden')">Tambah
                     Berita</button>
             </div>
+
 
 
             {{-- List Berita --}}
             @if ($news->isEmpty())
                 <p class="text-gray-500 italic">Belum ada berita yang ditambahkan.</p>
             @else
-                <div class="row">
+                <div class="row row-cols-1 g-4">
                     @foreach ($news as $item)
-                        <div class="col-md-12 mb-3">
+                        <div class="col">
                             <a href="{{ route('superadmin.berita.detail', $item->slug) }}"
                                 class="text-decoration-none text-dark">
-                                <div class="card d-flex flex-row berita-card">
-                                    <img src="{{ asset('storage/' . $item->image) }}" class="card-img-left w-25"
+                                <div class="card berita-card h-100 flex-column flex-xl-row">
+                                    <img src="{{ asset('storage/' . $item->image) }}" class="card-img-top"
                                         style="object-fit: cover;">
                                     <div class="card-body">
                                         <h5 class="card-title">{{ \Illuminate\Support\Str::limit($item->title, 60) }}
                                         </h5>
-                                        <p class="card-text prose">
+                                        <p class="card-text">
                                             {{ \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($item->content))), 150, '... (selengkapnya)') }}
-                                            <span class="text-primary"></span>
                                         </p>
                                         <small class="text-muted">Sumber: {{ $item->source_link }}</small>
                                     </div>
@@ -103,7 +122,8 @@
                         <label for="image" class="block font-semibold">Gambar Berita</label>
                         <input type="file" name="image" id="image" accept="image/*"
                             class="form-control @error('image') border-red-500 @enderror">
-                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran
+                            file 2MB.</span>
                         @error('image')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -223,12 +243,13 @@
                         crop(event) {
                             const canvas = cropper.getCroppedCanvas();
                             canvas.toBlob(function(blob) {
-                                const reader = new FileReader();
-                                reader.onloadend = function() {
-                                    croppedInput.value = reader.result;
-                                }
-                                reader.readAsDataURL(blob);
-                            }, 'image/jpeg', 0.9); // Tambahkan kualitas gambar (0.9 = 90%)
+                                    const reader = new FileReader();
+                                    reader.onloadend = function() {
+                                        croppedInput.value = reader.result;
+                                    }
+                                    reader.readAsDataURL(blob);
+                                }, 'image/jpeg',
+                                0.9); // Tambahkan kualitas gambar (0.9 = 90%)
                         }
                     });
                 }; // End preview.onload

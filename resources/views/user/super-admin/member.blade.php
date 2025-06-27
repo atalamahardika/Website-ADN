@@ -11,22 +11,14 @@
             {{-- Konten Member --}}
             <div class="container-fluid">
                 {{-- Header dengan Search dan Action Button --}}
-                <div class="row mb-4">
-                    <div class="col">
-                        <form method="GET" action="{{ route('superadmin.member') }}" class="d-flex">
-                            <div class="input-group">
-                                <input type="text" class="form-control"
-                                    placeholder="Cari member berdasarkan nama, email, NIK, universitas..."
-                                    name="search" value="{{ $search }}" style="min-width: 300px;">
-                                <button class="btn btn-outline-primary" type="submit">
-                                    <i class="fas fa-search"></i> Cari
-                                </button>
-                                @if ($search)
-                                    <a href="{{ route('superadmin.member') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-times"></i> Reset
-                                    </a>
-                                @endif
-                            </div>
+                <div class="mb-4">
+                    <div class="d-flex flex-column flex-md-row align-items-stretch gap-2 mb-3">
+                        <form action="{{ route('superadmin.member') }}" method="GET" class="d-flex flex-grow-1 gap-2" style="height: 37px;">
+                            <input type="text" name="search" class="form-control" placeholder="Cari member berdasarkan nama, email, NIK, universitas..." value="{{ $search }}">
+                            <button class="btn btn-outline-primary" type="submit">Cari</button>
+                            @if ($search)
+                                <a href="{{ route('superadmin.member') }}" class="btn btn-outline-secondary">Reset</a>
+                            @endif
                         </form>
                     </div>
                 </div>
@@ -55,9 +47,9 @@
                                         <div class="d-flex align-items-start mb-3">
                                             <div class="flex-shrink-0 me-3">
                                                 @if ($member->user && $member->user->profile_photo)
-                                                    <img src="{{ $member->user->profile_photo_url }}"
-                                                        alt="Profile" class="rounded-circle" width="60"
-                                                        height="60" style="object-fit: cover;">
+                                                    <img src="{{ $member->user->profile_photo_url }}" alt="Profile"
+                                                        class="rounded-circle" width="60" height="60"
+                                                        style="object-fit: cover;">
                                                 @else
                                                     <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
                                                         style="width: 60px; height: 60px;">
@@ -159,7 +151,7 @@
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="d-flex justify-content-center">
-                                {{ $members->appends(['search' => $search])->links() }}
+                                {{ $members->appends(['search' => $search])->links('vendor.pagination.bootstrap-5') }}
                             </div>
                         </div>
                     </div>

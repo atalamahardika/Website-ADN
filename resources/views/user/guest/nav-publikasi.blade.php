@@ -80,12 +80,13 @@
         <div class="tab-pane fade" id="mandiri" role="tabpanel">
             <h4 class="text-center">List Jurnal</h4>
 
-            <ul class="space-y-3">
+            <div class="space-y-3">
                 @forelse ($mandiri as $pub)
-                    <li class="card h-100 shadow-sm hover-card p-4 rounded shadow-sm flex justify-between items-start">
+                    <div class="card h-100 shadow-sm hover-card p-4 rounded flex justify-between items-start">
                         <div>
                             {{-- Judul --}}
                             <h5 class="font-semibold mb-1">{{ $pub->title }}</h5>
+                            {{-- Format Harvard --}}
                             {{-- Format Harvard --}}
                             <p class="text-gray-700">
                                 {{ $pub->formatted_authors }} ({{ $pub->year }}), ‘{{ $pub->title }}’,
@@ -110,13 +111,12 @@
                                     @endif
                                 </p>
                             @endif
-
                         </div>
-                    </li>
+                    </div>
                 @empty
-                    <p class="text-center mt-4">Belum ada publikasi member yang tersedia.</p>
+                    
                 @endforelse
-            </ul>
+            </div>
 
             {{-- Pagination --}}
             <div class="mt-4">

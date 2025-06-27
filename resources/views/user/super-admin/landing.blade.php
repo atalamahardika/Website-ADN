@@ -55,7 +55,8 @@
                         <label for="icon" class="block font-semibold">Upload Icon (opsional)</label>
                         <input type="file" name="icon" id="icon" class="form-control"
                             accept="image/png, image/jpeg, image/jpg">
-                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran
+                            file 2MB.</span>
                     </div>
 
                     {{-- Preview Icon --}}
@@ -71,70 +72,75 @@
             </x-modal>
 
             {{-- List Section --}}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Section</th>
-                        <th>Key</th>
-                        <th>Value</th>
-                        <th>Icon</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($sections as $index => $section)
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
                         <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $section->section }}</td>
-                            <td>{{ $section->key }}</td>
-                            <td>
-                                @if ($section->key === 'image')
-                                    <img src="{{ asset('storage/' . $section->value) }}" width="100" class="rounded shadow">
-                                @elseif ($section->key === 'content')
-                                    <div class="prose">
-                                        {!! Str::limit(strip_tags($section->value), 50) !!}
-                                    </div>
-                                @else
-                                    {{ $section->value }}
-                                @endif
-                            </td>
-                            <td>
-                                @if ($section->icon)
-                                    <img src="{{ asset('storage/' . $section->icon) }}" width="40" class="rounded">
-                                @else
-                                    <span class="text-muted">Tidak ada</span>
-                                @endif
-                            </td>
-                            <td class="flex gap-2">
-                                {{-- Tombol Edit --}}
-                                <button class="btn btn-warning"
-                                    onclick="openEditModal(
-                                            {{ $section->id }},
-                                            '{{ $section->section }}',
-                                            '{{ $section->key }}',
-                                            '{{ $section->key === 'image' ? asset('storage/' . $section->value) : addslashes($section->value) }}',
-                                            '{{ $section->icon ? asset('storage/' . $section->icon) : '' }}')">
-                                    Edit
-                                </button>
+                            <th>No</th>
+                            <th>Section</th>
+                            <th>Key</th>
+                            <th>Value</th>
+                            <th>Icon</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($sections as $index => $section)
+                            <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td>{{ $section->section }}</td>
+                                <td>{{ $section->key }}</td>
+                                <td>
+                                    @if ($section->key === 'image')
+                                        <img src="{{ asset('storage/' . $section->value) }}" width="100"
+                                            class="rounded shadow">
+                                    @elseif ($section->key === 'content')
+                                        <div class="prose">
+                                            {!! Str::limit(strip_tags($section->value), 50) !!}
+                                        </div>
+                                    @else
+                                        {{ $section->value }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($section->icon)
+                                        <img src="{{ asset('storage/' . $section->icon) }}" width="40"
+                                            class="rounded">
+                                    @else
+                                        <span class="text-muted">Tidak ada</span>
+                                    @endif
+                                </td>
+                                <td class="flex gap-2">
+                                    {{-- Tombol Edit --}}
+                                    <button class="btn btn-warning"
+                                        onclick="openEditModal(
+                                                {{ $section->id }},
+                                                '{{ $section->section }}',
+                                                '{{ $section->key }}',
+                                                '{{ $section->key === 'image' ? asset('storage/' . $section->value) : addslashes($section->value) }}',
+                                                '{{ $section->icon ? asset('storage/' . $section->icon) : '' }}')">
+                                        Edit
+                                    </button>
 
 
-                                {{-- Tombol Hapus --}}
-                                <form action="{{ route('superadmin.landing.destroy', $section->id) }}" method="POST"
-                                    class="d-inline delete-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center">Belum ada data section</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                                    {{-- Tombol Hapus --}}
+                                    <form action="{{ route('superadmin.landing.destroy', $section->id) }}"
+                                        method="POST" class="d-inline delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger">Hapus</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">Belum ada data section</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+
+            </div>
 
             {{-- Modal Edit --}}
             <x-modal id="modalEditSection" title="Edit Section">
@@ -169,7 +175,8 @@
                     <div class="mb-4">
                         <label class="block font-semibold">Ganti Icon (opsional)</label>
                         <input type="file" name="icon" class="form-control" accept="image/*">
-                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran file 2MB.</span>
+                        <span class="text-muted small">Format yang didukung JPG, JPEG, dan PNG dengan maksimal ukuran
+                            file 2MB.</span>
                     </div>
 
                     {{-- Preview Icon --}}
@@ -214,7 +221,8 @@
                                     data-id="{{ $news->id }}">
                                     <input type="hidden" name="selected_news_ids[]" value="{{ $news->id }}"
                                         data-title="{{ $news->title }}">
-                                    <img src="{{ asset('storage/' . $news->image) }}" class="w-full h-36 object-cover rounded">
+                                    <img src="{{ asset('storage/' . $news->image) }}"
+                                        class="w-full h-36 object-cover rounded">
                                     <h6 class="font-semibold mt-2">{{ $news->title }}</h6>
                                     <button type="button"
                                         class="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded remove-news">Hapus</button>
@@ -277,8 +285,8 @@
                                         <span class="drag-handle cursor-move text-muted me-2">
                                             <i class="bi bi-arrows-move"></i>
                                         </span>
-                                        <img src="{{ asset('storage/' . $news->image) }}" class="w-16 h-16 object-cover rounded"
-                                            alt="preview">
+                                        <img src="{{ asset('storage/' . $news->image) }}"
+                                            class="w-16 h-16 object-cover rounded" alt="preview">
                                         <span class="fw-semibold">{{ $news->title }}</span>
                                     </div>
                                     <input type="hidden" name="selected_news_ids[]" value="{{ $news->id }}">
@@ -314,7 +322,8 @@
 
                 {{-- Carousel Section --}}
                 @if ($selectedNews->isNotEmpty())
-                    <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel">
+                    <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel"
+                        data-bs-interval="4000">
                         <div class="carousel-indicators">
                             @foreach ($selectedNews as $index => $news)
                                 <button type="button" data-bs-target="#carouselExampleCaptions"
@@ -327,14 +336,17 @@
                         <div class="carousel-inner">
                             @foreach ($selectedNews as $index => $news)
                                 <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                    <img src="{{ asset('storage/' . $news->image) }}" class="d-block w-100 img-fluid"
-                                        style="max-height: 400px; object-fit: cover;"
-                                        alt="Slide {{ $index + 1 }}">
-                                    <div class="carousel-caption d-none d-md-block">
-                                        <div class="bg-secondary bg-opacity-50 p-2 rounded">
+                                    <a href="{{ route('superadmin.berita.detail', $news->slug ?? $news->id) }}">
+                                        <div class="carousel-img-wrapper">
+                                            <img src="{{ asset('storage/' . $news->image) }}"
+                                                alt="{{ $news->title }}"
+                                                class="d-block w-100 img-fluid custom-carousel-height">
+                                        </div>
+                                        <div
+                                            class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
                                             <h5 class="text-white mb-0">{{ $news->title }}</h5>
                                         </div>
-                                    </div>
+                                    </a>
                                 </div>
                             @endforeach
                         </div>
@@ -349,6 +361,23 @@
                             <span class="visually-hidden">Next</span>
                         </button>
                     </div>
+                    <style>
+                        .carousel-img-wrapper {
+                            aspect-ratio: 3 / 2;
+                            width: 100%;
+                            overflow: hidden;
+                        }
+
+                        .carousel-img-wrapper img {
+                            object-fit: cover;
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        .carousel-inner {
+                            min-height: 100px;
+                        }
+                    </style>
                 @else
                     <div class="alert alert-warning">Belum ada berita yang dipilih untuk Carousel Section.</div>
                 @endif
@@ -361,19 +390,26 @@
                 @endphp
 
                 @if ($heroTitle && $heroContent && $heroImage)
-                    <div class="hero-section d-flex align-items-center min-vh-75 py-5 py-md-5"
+                    <div class="hero-section position-relative d-flex align-items-center min-vh-75 py-5 py-md-5"
                         style="background-image: url('{{ asset('images/bg-hero.svg') }}');
-        background-size: cover; background-position: center; background-repeat: no-repeat;">
-                        <div class="container py-5">
+        background-size: cover; background-position: center; background-repeat: no-repeat; ">
+
+                        <!-- Overlay transparan -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100"
+                            style="background-color: rgba(248, 251, 247, 0.4); z-index: 1;">
+                        </div>
+
+                        <!-- Konten di atas background -->
+                        <div class="container py-5 position-relative" style="z-index: 2;">
                             <div class="row align-items-center g-4">
                                 <!-- Gambar Kiri -->
-                                <div class="col-md-6 text-center">
-                                    <img src="{{ asset('storage/' . $heroImage->value) }}" alt="image" class="img-fluid"
-                                        style="max-width: 550px;">
+                                <div class="col d-flex justify-content-center">
+                                    <img src="{{ asset('storage/' . $heroImage->value) }}" alt="image"
+                                        class="img-fluid" style="max-width: 550px; object-fit: cover;">
                                 </div>
 
                                 <!-- Teks Kanan -->
-                                <div class="col-md-6 text-center text-md-start">
+                                <div class="col text-center text-xl-start hero-text">
                                     <h2 class="fw-bold display-5" style="color: #14532d;">
                                         {{ $heroTitle->value }}
                                     </h2>
@@ -384,6 +420,26 @@
                             </div>
                         </div>
                     </div>
+                    <style>
+                        @media (max-width: 575.98px) {
+                            .hero-section {
+                                height: 120vh !important;
+                            }
+
+                            .hero-section img {
+                                max-width: 350px !important;
+                            }
+
+                            .contact-section img {
+                                width: 30px !important;
+                                height: 30px !important;
+                            }
+
+                            .contact-section .prose p {
+                                margin-bottom: 0px !important;
+                            }
+                        }
+                    </style>
                 @else
                     <div class="alert alert-warning">Data Hero Section belum lengkap.</div>
                 @endif
@@ -399,20 +455,21 @@
                     <div class="about-section py-5 mt-4" id="tentang"
                         style="background-color: rgba(219, 234, 213, 0.2);">
                         <div class="container">
-                            <div class="row align-items-center gy-4">
-                                <!-- Teks -->
-                                <div class="col-md-6">
-                                    <h2 class="display-5 fw-bold">{{ $aboutTitle->value }}</h2>
-                                    <p class="mt-3 prose">
-                                        {!! $aboutContent->value !!}
-                                    </p>
+                            <!-- Gunakan flex-row hanya di xl (desktop), sisanya tetap kolom -->
+                            <div class="row gy-4 d-flex flex-column flex-xl-row align-items-center">
+                                <!-- Gambar (default duluan, desktop pindah ke kanan) -->
+                                <div
+                                    class="col-12 col-xl-6 text-center order-1 order-xl-2 d-flex justify-content-center">
+                                    <img src="{{ asset('storage/' . $aboutImage->value) }}" alt="about"
+                                        class="img-fluid rounded" style="object-fit: cover; max-height: 480px;">
                                 </div>
 
-                                <!-- Gambar -->
-                                <div class="col-md-6 text-center">
-                                    <img src="{{ asset('storage/' . $aboutImage->value) }}" alt="about"
-                                        class="img-fluid rounded shadow-sm"
-                                        style="object-fit: cover; max-height: 480px;">
+                                <!-- Teks (default di bawah, desktop pindah ke kiri) -->
+                                <div class="col-12 col-xl-6 order-2 order-xl-1 text-center text-xl-start">
+                                    <h2 class="display-5 fw-bold">{{ $aboutTitle->value }}</h2>
+                                    <div class="prose mt-3 text-justify">
+                                        {!! $aboutContent->value !!}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -538,7 +595,7 @@
                                         </div>
                                         <div class="card-body d-flex flex-column">
                                             <h6 class="card-title flex-grow-1">{{ $item->title }}</h6>
-                                            <a href="#" class="btn btn-sm btn-outline-success mt-2">
+                                            <a href="{{ route('superadmin.berita.detail', $news->slug ?? $news->id) }}" class="btn btn-sm btn-outline-success mt-2">
                                                 Baca Selengkapnya
                                             </a>
                                         </div>
@@ -548,7 +605,7 @@
                         </div>
 
                         <div class="text-center mt-4">
-                            <a href="#" class="btn btn-outline-success btn-sm">
+                            <a href="{{ route('superadmin.berita') }}" class="btn btn-outline-success btn-sm">
                                 Lihat Semua Berita
                             </a>
                         </div>
@@ -573,7 +630,9 @@
                                                 <img src="{{ asset('storage/' . $contact->icon) }}" alt="icon"
                                                     style="width: 40px; height: 40px;" class="me-3">
                                             @endif
-                                            <p class="mb-0 fs-5 prose">{!! $contact->value !!}</p>
+                                            <div class="prose mb-0">
+                                                {!! $contact->value !!}
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -581,11 +640,7 @@
                         </div>
                     </div>
                 @endif
-
-
             </div>
-
-
         </x-layout.content-bar>
     </div>
 

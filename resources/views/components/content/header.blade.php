@@ -1,54 +1,87 @@
 @props(['user', 'title', 'subtitle'])
 
-<div class="content-bar-header sticky top-0 bg-white z-10" style="border-bottom: 1px solid #0BAF6A;">
-    <div class="container flex justify-content-between items-center py-3">
-        <div class="text-wrapper">
-            <h5>{{ $title }}</h5>
-            <p class="mb-0">{{ $subtitle }}</p>
-        </div>
+<div class="content-bar-header sticky top-0 bg-white z-10 border-bottom" style="border-color: #0BAF6A;">
+    <div class="container py-3">
 
-        <div class="relative h-full" x-data="{ open: false }">
-            <!-- Tombol Profile -->
-            <button @click="open = !open"
-                class="flex items-center py-[8px] px-[20px] border-[1.5px] rounded w-full focus:outline-none"
-                style="border-color: #0BAF6A;">
-                <img class="w-10 h-10 rounded-full object-cover mr-4" src="{{ $user->profile_photo_url }}"
-                    alt="{{ $user->name }}" />
-                <span>{{ $user->name }}</span>
+        <!-- Baris Pertama (Tablet & Mobile): Hamburger + Profile -->
+        <div class="d-flex justify-content-between align-items-center mb-2 d-xl-none">
+            <!-- Hamburger -->
+            <button class="btn btn-outline-success" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+                <i class="fas fa-bars"></i>
             </button>
 
-            <!-- Dropdown Menu -->
-            <div x-show="open" @click.outside="open = false"
-                class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <!-- Tampilkan "Keanggotaan" hanya jika role-nya 'member' -->
-                @if ($user->role === 'member')
-                    <a href="{{ route('profile.edit') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil Saya</a>
-                    <a href="{{ route('keanggotaan') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Keanggotaan</a>
-                    <a href="{{ route('ganti-password') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ubah Kata
-                        Sandi</a>
-                @elseif ($user->role === 'admin')
-                    <a href="{{ route('admin.profile.edit') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil Saya</a>
-                    <a href="{{ route('admin.ganti-password') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ubah Kata
-                        Sandi</a>
-                @elseif ($user->role === 'super admin')
-                    <a href="{{ route('superadmin.profile.edit') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil Saya</a>
-                    <a href="{{ route('superadmin.ganti-password') }}"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ubah Kata
-                        Sandi</a>
-                @endif
-                <!-- Logout tersedia untuk semua role -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit"
-                        class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</button>
-                </form>
+            <!-- Profile Dropdown (Mobile/Tablet) -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open"
+                    class="flex items-center py-[6px] px-[12px] border-[1.5px] rounded"
+                    style="border-color: #0BAF6A;">
+                    <img class="w-8 h-8 rounded-full object-cover me-2" src="{{ $user->profile_photo_url }}"
+                        alt="{{ $user->name }}" />
+                    <span>{{ $user->name }}</span>
+                </button>
+
+                <div x-show="open" @click.outside="open = false"
+                    class="dropdown-menu position-absolute end-0 mt-2 show" style="min-width: 12rem;">
+                    <!-- Isi dropdown -->
+                    @if ($user->role === 'member')
+                        <a href="{{ route('profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('keanggotaan') }}" class="dropdown-item">Keanggotaan</a>
+                        <a href="{{ route('ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @elseif ($user->role === 'admin')
+                        <a href="{{ route('admin.profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('admin.ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @elseif ($user->role === 'super admin')
+                        <a href="{{ route('superadmin.profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('superadmin.ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @endif
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                    </form>
+                </div>
             </div>
         </div>
+
+        <!-- Baris Kedua: Title & Subtitle (Mobile & Tablet) atau Satu baris penuh di Desktop -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <!-- Title & Subtitle -->
+            <div class="header-title-subtitle">
+                <h5 class="mb-1">{{ $title }}</h5>
+                <p class="mb-0">{{ $subtitle }}</p>
+            </div>
+
+            <!-- Profile Dropdown (Desktop only) -->
+            <div class="d-none d-xl-block" x-data="{ open: false }">
+                <button @click="open = !open"
+                    class="flex items-center py-[8px] px-[20px] border-[1.5px] rounded"
+                    style="border-color: #0BAF6A;">
+                    <img class="w-10 h-10 rounded-full object-cover me-2" src="{{ $user->profile_photo_url }}"
+                        alt="{{ $user->name }}" />
+                    <span>{{ $user->name }}</span>
+                </button>
+
+                <div x-show="open" @click.outside="open = false"
+                    class="dropdown-menu position-absolute end-0 mt-2 show" style="min-width: 12rem;">
+                    <!-- Isi dropdown sama -->
+                    @if ($user->role === 'member')
+                        <a href="{{ route('profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('keanggotaan') }}" class="dropdown-item">Keanggotaan</a>
+                        <a href="{{ route('ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @elseif ($user->role === 'admin')
+                        <a href="{{ route('admin.profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('admin.ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @elseif ($user->role === 'super admin')
+                        <a href="{{ route('superadmin.profile.edit') }}" class="dropdown-item">Profil Saya</a>
+                        <a href="{{ route('superadmin.ganti-password') }}" class="dropdown-item">Ubah Kata Sandi</a>
+                    @endif
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

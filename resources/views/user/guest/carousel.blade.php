@@ -10,8 +10,11 @@
         @foreach ($carouselNews as $index => $news)
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                 <a href="{{ route('guest.news.show', $news->slug ?? $news->id) }}">
-                    <img src="{{ asset('storage/' . $news->image) }}" class="d-block w-100 img-fluid"
-                        style="max-height: 400px; object-fit: cover;" alt="{{ $news->title }}">
+                    <!-- Container gambar dengan rasio 3:2 -->
+                    <div class="carousel-img-wrapper">
+                        <img src="{{ asset('storage/' . $news->image) }}"
+                            class="d-block w-100 img-fluid custom-carousel-height" alt="{{ $news->title }}">
+                    </div>
                     <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
                         <h5 class="text-white mb-0">{{ $news->title }}</h5>
                     </div>
@@ -28,3 +31,21 @@
         <span class="visually-hidden">Selanjutnya</span>
     </button>
 </div>
+<style>
+    .carousel-img-wrapper {
+        aspect-ratio: 3 / 2;
+        /* Menjaga rasio 3:2 */
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .carousel-img-wrapper img {
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+    }
+
+    .carousel-inner {
+        min-height: 100px;
+    }
+</style>

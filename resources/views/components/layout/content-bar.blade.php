@@ -1,5 +1,5 @@
 @props(['title', 'subtitle'])
-<div class="content-bar flex-grow h-full overflow-y-auto">
+<div class="content-bar flex-fill d-flex flex-column h-100 overflow-auto">
     <x-content.header :user="Auth::user()" :title="$title" :subtitle="$subtitle"/>
 
     <x-content.main>
