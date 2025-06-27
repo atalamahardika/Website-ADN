@@ -138,16 +138,30 @@ class SuperAdminController extends Controller
     public function divisionDestroy($id)
     {
         Division::findOrFail($id)->delete();
-        return back()->with('status', 'Divisi berhasil dihapus.');
+        return redirect()->route('superadmin.divisi')->with('status', 'Divisi berhasil dihapus.');
     }
 
     public function showDivisionDetail($id)
     {
+        // Temukan divisi berserta sub-divisi dan adminnya
         $division = Division::with('subDivisions', 'admin')->findOrFail($id);
+
+        // Siapkan data admin yang tersedia untuk EDIT hanya untuk divisi ini
+        $availableAdminsForEdit = User::where('role', 'admin')
+            ->where(function ($query) use ($division) {
+                // Termasuk admin yang belum ditugaskan
+                $query->whereDoesntHave('division')
+                    // Dan juga admin yang saat ini ditugaskan ke divisi ini
+                    ->orWhere('id', $division->admin_id);
+            })
+            ->get();
+
+        // Return view dengan data divisi dan admin yang tersedia untuk edit
         return view('user.super-admin.detail-divisi', [
             'title' => 'Detail Divisi ',
             'subtitle' => $division->title,
             'division' => $division,
+            'availableAdminsForEdit' => $availableAdminsForEdit, // Kirimkan ini ke view
         ]);
     }
 
