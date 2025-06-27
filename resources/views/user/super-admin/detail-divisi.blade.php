@@ -11,7 +11,7 @@
             <div class="grid grid-cols-1 gap-6">
                 {{-- Informasi Divisi --}}
                 <div class="bg-white rounded-2xl shadow p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Informasi Divisi</h2>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Informasi Divisi</h2>
                     <div class="space-y-3">
                         <div>
                             <label class="font-medium text-gray-600">Judul Divisi:</label>
@@ -36,12 +36,69 @@
                                 <p class="text-gray-500 italic">Belum ditugaskan</p>
                             @endif
                         </div>
+
+                        {{-- Tombol Aksi --}}
+                        <div class="flex flew-col sm:flex-row gap-2">
+                            <button class="btn btn-warning w-full sm:w-auto" onclick="document.getElementById('modalEditDivisi-{{ $division->id }}').classList.remove('hidden')">Edit</button>
+                            <form action="{{ route('superadmin.divisi.destroy', $division->id) }}" method="post"
+                                onsubmit="return confirmDeleteDivisi(event)" class="w-full sm:w-auto">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-danger w-full sm:w-auto" type="submit">Hapus</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
+                {{-- Modal Edit Divisi --}}
+                <x-modal id="modalEditDivisi-{{ $division->id }}" title="Edit Divisi">
+                    <form method="POST" action="{{ route('superadmin.divisi.update', $division->id) }}"
+                        class="space-y-4">
+                        @csrf
+                        @method('PATCH')
+                        <div>
+                            <label for="edit_title_{{ $division->id }}"
+                                class="block font-medium text-sm text-gray-700">Judul Divisi</label>
+                            <input type="text" name="title" id="edit_title_{{ $division->id }}"
+                                value="{{ $division->title }}" placeholder="Contoh : Divisi I, Divisi II, dst"
+                                class="form-control">
+                        </div>
+                        <div>
+                            <label for="edit_region_{{ $division->id }}"
+                                class="block font-medium text-sm text-gray-700">Wilayah Divisi</label>
+                            <input type="text" name="region" id="edit_region_{{ $division->id }}"
+                                value="{{ $division->region }}"
+                                placeholder="Contoh : Jawa Timur, Jawa Barat, dst (provinsi)" class="form-control">
+                        </div>
+                        <div>
+                            <label for="edit_description_{{ $division->id }}"
+                                class="block font-medium text-sm text-gray-700">Deskripsi Divisi</label>
+                            <textarea name="description" id="edit_description_{{ $division->id }}" rows="5"
+                                placeholder="Isi konten/deskripsi divisi" class="form-control editor">{!! $division->description !!}</textarea>
+                        </div>
+                        <div>
+                            <label for="edit_admin_id_{{ $division->id }}"
+                                class="block font-medium text-sm text-gray-700">Admin Divisi
+                                (opsional)
+                            </label>
+                            <select name="admin_id" id="edit_admin_id_{{ $division->id }}" class="form-control">
+                                <option value="">-- Pilih Admin (Opsional) --</option>
+                                @foreach ($availableAdminsForEdit as $admin)
+                                    <option value="{{ $admin->id }}"
+                                        {{ $division->admin_id == $admin->id ? 'selected' : '' }}>
+                                        {{ $admin->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        </div>
+                    </form>
+                </x-modal>
+
                 {{-- Daftar Sub Divisi --}}
                 <div class="bg-white rounded-2xl shadow p-6">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 md:gap-0 mb-6">
                         <h2 class="text-xl font-semibold text-gray-800 leading-none">Daftar Sub Divisi</h2>
                         <button onclick="document.getElementById('modalTambahSub').classList.remove('hidden')"
                             class="btn btn-primary">
@@ -101,37 +158,40 @@
                         <ul class="divide-y divide-gray-200 pl-0">
                             @foreach ($division->subDivisions as $sub)
                                 <li class="py-4">
-                                    <div class="flex flex-row items-start">
-                                        {{-- Konten Sub Divisi --}}
-                                        <div class="w-3/4">
-                                            <p class="font-semibold text-gray-800 text-base mb-1">Wilayah Sub Divisi:
-                                                {{ $sub->title }}</p>
-                                            <div class="text-gray-600 text-sm prose">
-                                                {!! $sub->description !!}</div>
+                                    <div class="space-y-3">
+                                        {{-- Title --}}
+                                        <p class="font-semibold text-gray-800 text-base mb-0">Wilayah Sub Divisi:
+                                            {{ $sub->title }}</p>
+
+                                        {{-- Status --}}
+                                        <span
+                                            class="text-xs inline-block px-2 py-1 mt-1 rounded-full
+            {{ $sub->is_approved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                            {{ $sub->is_approved ? 'Disetujui' : 'Menunggu' }}
+                                        </span>
+
+                                        {{-- Description --}}
+                                        <div class="text-gray-600 text-sm prose">
+                                            {!! $sub->description !!}
                                         </div>
 
-                                        {{-- Aksi --}}
-                                        <div class="flex flex-col items-start space-y-2 w-1/4">
-                                            <span
-                                                class="text-xs px-2 py-1 rounded-full w-full text-center
-                        {{ $sub->is_approved ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                                {{ $sub->is_approved ? 'Disetujui' : 'Menunggu' }}
-                                            </span>
-
+                                        {{-- Tombol Aksi --}}
+                                        <div class="flex flex-col sm:flex-row gap-2">
                                             {{-- Toggle Approval --}}
-                                            <form action="{{ route('superadmin.subdivisi.toggleApproval', $sub->id) }}"
-                                                method="POST"
-                                                class="inline-block w-full">
+                                            <form
+                                                action="{{ route('superadmin.subdivisi.toggleApproval', $sub->id) }}"
+                                                method="POST" class="w-full sm:w-auto">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="btn btn-info w-full">
+                                                <button type="submit" class="btn btn-info w-full sm:w-auto">
                                                     {{ $sub->is_approved ? 'Batalkan Persetujuan' : 'Setujui' }}
                                                 </button>
                                             </form>
 
                                             {{-- Edit --}}
-                                            <button class="btn btn-warning w-full" onclick="handleEdit(this)"
-                                                data-id="{{ $sub->id }}" data-title="{{ $sub->title }}"
+                                            <button class="btn btn-warning w-full sm:w-auto"
+                                                onclick="handleEdit(this)" data-id="{{ $sub->id }}"
+                                                data-title="{{ $sub->title }}"
                                                 data-description="{{ $sub->description }}"
                                                 data-approved="{{ $sub->is_approved ? 'true' : 'false' }}">
                                                 Edit
@@ -139,11 +199,12 @@
 
                                             {{-- Hapus --}}
                                             <form action="{{ route('superadmin.subdivisi.delete', $sub->id) }}"
-                                                method="POST" class="inline-block w-full"
+                                                method="POST" class="w-full sm:w-auto"
                                                 onsubmit="return confirmDelete(event)">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-danger w-full">Hapus</button>
+                                                <button type="submit"
+                                                    class="btn btn-danger w-full sm:w-auto">Hapus</button>
                                             </form>
                                         </div>
                                     </div>
@@ -195,6 +256,23 @@
         Swal.fire({
             title: 'Yakin ingin menghapus?',
             text: "Data sub divisi akan dihapus permanen.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#aaa',
+            confirmButtonText: 'Ya, hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit();
+            }
+        });
+    }
+    function confirmDeleteDivisi(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Yakin ingin menghapus?',
+            text: "Data divisi akan dihapus permanen.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
