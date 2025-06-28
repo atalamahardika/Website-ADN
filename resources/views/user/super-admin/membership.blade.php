@@ -258,7 +258,7 @@
 
                     {{-- Pagination --}}
                     <div class="d-flex justify-content-center mt-4">
-                        {{ $memberships->appends(request()->query())->links() }}
+                        {{ $memberships->appends(request()->query())->links('vendor.pagination.bootstrap-5') }}
                     </div>
                 @else
                     <div class="card shadow-sm">
